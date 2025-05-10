@@ -11,18 +11,17 @@ add_compile_options(-Wall -Wextra -pedantic)
 add_subdirectory(readout_decoder)
 add_subdirectory(networking)
 
-include_directories(readout_decoder networking)
+include_directories(src/common src/metric_algs readout_decoder/src networking)
 
-file(GLOB DECODER_SRC readout_decoder/*.cpp)
+#file(GLOB DECODER_SRC readout_decoder/*.cpp)
 file(GLOB NETWORK_SRC networking/tcp*.cpp)
-file(GLOB MONITOR_SRC src/*.cpp)
+file(GLOB MONITOR_SRC src/common/*.cpp)
+file(GLOB METRICS_SRC src/metric_algs/*.cpp)
 
 add_executable(DataMonitor main.cpp
                 ${MONITOR_SRC}
-                ${DECODER_SRC}
+                ${METRICS_SRC}
                 ${NETWORK_SRC})
 
-add_library(data_monitor SHARED STATIC
-            ${MONITOR_SRC}
-            ${DECODER_SRC}
-            ${NETWORK_SRC})
+target_link_libraries(DataMonitor PRIVATE pthread)
+target_link_libraries(DataMonitor PRIVATE raw_decoder)
