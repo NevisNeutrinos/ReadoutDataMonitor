@@ -17,9 +17,6 @@ int main() {
     std::thread io_thread([&]() { io_context.run(); });
     std::thread monitor_thread([&]() { dm.ReceiveCommand(); });
 
-    // dm.SetRunning(false);
-    // std::cout << "Data Monitor stopped!\n";
-
     monitor_thread.join();
     io_context.stop();
     io_thread.join();
