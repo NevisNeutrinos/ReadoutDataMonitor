@@ -12,7 +12,7 @@ int main() {
     asio::io_context io_context;
     std::cout << "Starting controller..." << std::endl;
     bool run = true;
-    data_monitor::DataMonitor dm(io_context, "127.0.0.1", 1752, true, run);
+    data_monitor::DataMonitor dm(io_context, "127.0.0.1", 1753, 1752, true, run);
 
     std::thread io_thread([&]() { io_context.run(); });
     std::thread monitor_thread([&]() { dm.ReceiveCommand(); });
