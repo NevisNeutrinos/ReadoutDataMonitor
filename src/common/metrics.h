@@ -9,14 +9,14 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <stdexcept>
 
 
-struct Metric_Struct {
-    uint32_t num_fems;
-    uint32_t num_charge_channels;
-    uint32_t num_light_channels;
-};
-
+// This is fixed for the flight
+constexpr size_t NUM_CHARGE_CHANNELS = 64;
+constexpr size_t NUM_LIGHT_CHANNELS = 32;
+constexpr size_t NUM_CHARGE_SAMPLES = 763;
+constexpr size_t NUM_LIGHT_SAMPLES = 30;
 
 /**
  * @struct Histogram
@@ -129,6 +129,64 @@ struct Histogram {
         }
         std::cout << "Values above range (>=" << max_value << "): " << above_range_count << std::endl;
         std::cout << "-----------------" << std::endl;
+    }
+};
+
+struct Metric_Struct {
+    int32_t num_fems;
+    int32_t num_charge_channels;
+    int32_t num_light_channels;
+
+    std::array<int32_t, NUM_CHARGE_CHANNELS> charge_channel_num_samples{};
+    std::vector<Histogram> charge_histograms{NUM_CHARGE_CHANNELS, Histogram(1024,4096,16)};
+    std::vector<Histogram> light_histograms{NUM_LIGHT_CHANNELS, Histogram(1596,4096,20)};
+
+    std::vector<int32_t> serialize() const {
+        // Start with the configuration metadata
+        std::vector<int32_t> serialized_data = {
+            num_fems,
+            num_charge_channels,
+            num_light_channels
+        };
+
+        serialized_data.insert(serialized_data.end(),
+                            charge_channel_num_samples.begin(),
+                             charge_channel_num_samples.end());
+
+        bool low_bandwith_mode_ = false;
+        if (!low_bandwith_mode_ && !charge_histograms.empty()) {
+            for (const auto& hist : charge_histograms) {
+                auto tmp = hist.serialize();
+                serialized_data.insert(serialized_data.end(), tmp.begin(),tmp.end());
+            }
+            for (const auto& hist : light_histograms) {
+                auto tmp = hist.serialize();
+                serialized_data.insert(serialized_data.end(), tmp.begin(),tmp.end());
+            }
+        }
+
+        return serialized_data;
+    }
+
+    static Metric_Struct deserialize(const std::vector<int32_t>& data) {
+
+        Metric_Struct metrics{};
+        metrics.num_fems = data.at(0);
+        metrics.num_charge_channels = data.at(1);
+        metrics.num_light_channels = data.at(2);
+
+        return metrics;
+    }
+
+    void print () const {
+        std::cout << "+++++++++++++++++++++++++++++++++++++++++ \n"
+                  << "  num_fems: " << num_fems << "\n"
+                  << "  num_charge_channels: " << num_charge_channels << "\n"
+                  << "  num_light_channels: " << num_light_channels << "\n";
+        for (const auto &nsamples : charge_channel_num_samples) { std::cout << nsamples << ","; }
+        std::cout << "\n"
+        << "+++++++++++++++++++++++++++++++++++++++++"
+        << std::endl;
     }
 };
 

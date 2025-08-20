@@ -14,6 +14,8 @@ public:
 
         bool ProcessEvent(EventStruct &event, Metric_Struct &metrics) override;
         void Clear() override;
+        void LightChannelDistribution(const std::vector<std::vector<uint16_t>> &light_words,
+                                      const std::vector<uint16_t> &light_channels, Metric_Struct &metrics);
 
     private:
 };

@@ -141,9 +141,14 @@ namespace data_monitor {
 
             charge_algs_.ProcessEvent(evt_data, metrics_);
             light_algs_.ProcessEvent(evt_data, metrics_);
+            metrics_.print();
+            auto tmp_vec = metrics_.serialize();
+            Command cmd(0x0, tmp_vec.size());
+            cmd.arguments = std::move(tmp_vec);
 
             event_count++;
         }
+
         // 3.
 
         // 4.

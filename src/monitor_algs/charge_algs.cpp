@@ -11,19 +11,20 @@ bool ChargeAlgs::ProcessEvent(EventStruct &event, Metric_Struct &metrics) {
     metrics.num_fems = event.slot_number.size();
     metrics.num_charge_channels = event.charge_adc.size();
 
-    ChargeChannelDistribution(event.charge_adc);
+    ChargeChannelDistribution(event.charge_adc, event.charge_channel, metrics);
     return true;
 }
 
-void ChargeAlgs::Clear() {
-}
+void ChargeAlgs::ChargeChannelDistribution(const std::vector<std::vector<uint16_t>> &charge_words,
+                                           const std::vector<uint16_t> &charge_channels, Metric_Struct &metrics) {
 
-void ChargeAlgs::ChargeChannelDistribution(const std::vector<std::vector<uint16_t>> &charge_words) {
-
-    for (const auto &channel : charge_words) {
-        for (const auto &word : channel) {
-            charge_histogram_.fill(word);
+    for (const auto &channel : charge_channels) {
+        metrics.charge_channel_num_samples.at(channel) = charge_words.at(channel).size();
+        for (const auto &word : charge_words.at(channel)) {
+            metrics.charge_histograms.at(channel).fill(word);
         }
     }
+}
 
+void ChargeAlgs::Clear() {
 }

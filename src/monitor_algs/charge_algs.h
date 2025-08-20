@@ -15,7 +15,8 @@ public:
 
     bool ProcessEvent(EventStruct &event, Metric_Struct &metrics) override;
     void Clear() override;
-    void ChargeChannelDistribution(const std::vector<std::vector<uint16_t>> &charge_words);
+    void ChargeChannelDistribution(const std::vector<std::vector<uint16_t>> &charge_words,
+                                   const std::vector<uint16_t> &charge_channels, Metric_Struct &metrics);
 
 
 private:
@@ -24,7 +25,7 @@ private:
     constexpr static size_t NUM_CHANNELS = 192;
     constexpr static size_t NUM_SAMPLES = 763;
 
-    Histogram charge_histogram_{0, 4096, 10};
+    Histogram charge_histogram_{1024, 4096, 16};
 
 };
 
