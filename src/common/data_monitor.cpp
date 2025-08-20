@@ -8,16 +8,20 @@
 
 namespace data_monitor {
 
-    DataMonitor::DataMonitor(asio::io_context& io_context, const std::string& ip_address,
-                             short port, bool is_server, bool is_running) :
-    tcp_connection_(io_context, ip_address, port, is_server),
+    DataMonitor::DataMonitor(asio::io_context& io_context, const std::string& ip_address, const uint16_t command_port,
+                             const uint16_t status_port, bool is_server, bool is_running) :
+    tcp_connection_(io_context, ip_address, command_port, is_server),
     random_generator_(std::random_device()()),
     event_distrib_(event_min, event_max),
     charge_channel_distrib_(charge_min,charge_max),
-    light_channel_distrib_(light_min, light_max)
+    light_channel_distrib_(light_min, light_max),
+    light_algs_(),
+    charge_algs_()
     {
         std::cout << "DM" << std::endl;
-        process_events_ = std::make_unique<ProcessEvents>(light_slot_);
+        process_events_ = std::make_unique<ProcessEvents>(light_slot_, false, std::vector<uint16_t>());
+        process_events_->UseEventStride(true);
+        process_events_->SetEventStride(event_stride_);
     }
 
     void DataMonitor::SetRunning(const bool run) {
@@ -81,8 +85,8 @@ namespace data_monitor {
 
     void DataMonitor::OpenFile() {
         // Todo need to select files somehow
-        const std::string file_name = "pGRAMS_bin_" + std::to_string(1) + "_" + std::to_string(0) + ".dat";
-        if (!process_events_->OpenFile(file_name)) {
+        // const std::string file_name = "pGRAMS_bin_" + std::to_string(1) + "_" + std::to_string(0) + ".dat";
+        if (!process_events_->OpenFile(monitor_file_)) {
             std::cerr << "Failed to load file!" << std::endl;
         }
     }
@@ -115,13 +119,37 @@ namespace data_monitor {
     }
 
     void DataMonitor::GetEvents(uint16_t charge_channel, uint16_t light_channel) {
-        // 1. Throw number to randomly select charge and light channels
-        // 2. Loop through all events in file to find event(s)
-        // 3. While looping check FEM header data
-        // 4. Process channel data in the "subscribed" metric algs
-        // 5. Send results
-        Command cmd(0x26, 3);
-        cmd.arguments = {selected_events_.at(0), charge_channel, light_channel}; // FIXME sending fake status
-        tcp_connection_.WriteSendBuffer(cmd);
+        /*
+           x 1. Throw number to randomly select charge and light channels
+            2. Loop through all events in file to find event(s)
+            3. Process channel data in the "subscribed" metric algs
+            4. Send results
+        */
+
+        // 1. Decided not to do this
+        // 2.
+        size_t event_count = 0;
+        while (process_events_->GetEvent() && (event_count < EVENT_LOOP_MAX)) {
+            if ((event_count % event_stride_) != 0) {
+                event_count++;
+                continue;
+            }
+            EventStruct evt_data = process_events_->GetEventStruct();
+            std::cout << event_count << ": \n"
+                      << "FEM Evt#: " << evt_data.event_number.at(0) << "/"  << evt_data.event_number.at(1) << "\n"
+                      << "Charge/Light #Ch: " << evt_data.charge_adc.size() << "/" << evt_data.light_channel.size() << std::endl;
+
+            charge_algs_.ProcessEvent(evt_data, metrics_);
+            light_algs_.ProcessEvent(evt_data, metrics_);
+
+            event_count++;
+        }
+        // 3.
+
+        // 4.
+
+        // Command cmd(0x26, 3);
+        // cmd.arguments = {selected_events_.at(0), charge_channel, light_channel}; // FIXME sending fake status
+        // tcp_connection_.WriteSendBuffer(cmd);
     }
 } // data_monitor

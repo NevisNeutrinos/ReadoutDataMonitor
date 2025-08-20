@@ -7,9 +7,13 @@
 
 #include "tcp_connection.h"
 #include "process_events.h"
+#include "light_algs.h"
+#include "charge_algs.h"
+#include "metrics.h"
 #include <random>
 #include <atomic>
 #include <thread>
+#include <cstdint>
 
 namespace data_monitor {
 
@@ -17,7 +21,7 @@ class DataMonitor {
 public:
 
     DataMonitor(asio::io_context& io_context, const std::string& ip_address,
-                short port, bool is_server, bool is_running);
+                uint16_t command_port, uint16_t status_port, bool is_server, bool is_running);
     ~DataMonitor() = default;
 
     void SetRunning(bool run);
@@ -30,11 +34,12 @@ public:
     size_t SelectLightChannel();
     void GetEvents(uint16_t charge_channel, uint16_t light_channel);
     void ReceiveCommand();
+    void SetMonitorFile(const std::string &monitor_file) { monitor_file_ = monitor_file; }
+    void RunMetrics();
 
 private:
 
     void HandleCommand(Command& cmd);
-    void RunMetrics();
     void RunDecoder();
     void StopDecoder();
 
@@ -60,6 +65,20 @@ private:
     std::atomic_bool is_decoding_;
 
     std::thread decode_thread_;
+
+    // The event step size, analyze every N events
+    constexpr static size_t event_stride_ = 500;
+    // Set a hard upper limit to ensure no infinite loops while decoding
+    constexpr static size_t EVENT_LOOP_MAX = 10000;
+
+    // This struct will hold the metrics
+    Metric_Struct metrics_;
+
+    // Define the metric algorithm classes
+    LightAlgs light_algs_;
+    ChargeAlgs charge_algs_;
+
+    std::string monitor_file_;
 
     enum ControlCmds : uint16_t {
         kRunDecoder = 1,
