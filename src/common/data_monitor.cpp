@@ -134,6 +134,7 @@ namespace data_monitor {
                 event_count++;
                 continue;
             }
+            metrics_.clear();
             EventStruct evt_data = process_events_->GetEventStruct();
             std::cout << event_count << ": \n"
                       << "FEM Evt#: " << evt_data.event_number.at(0) << "/"  << evt_data.event_number.at(1) << "\n"

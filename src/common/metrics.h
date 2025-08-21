@@ -72,6 +72,10 @@ struct Histogram {
         }
     }
 
+    void clear() {
+        for (auto &bin : bins) bin = 0;
+    }
+
     std::vector<int32_t> serialize() const {
         // Start with the configuration metadata
         std::vector<int32_t> serialized_data = {
@@ -124,8 +128,7 @@ struct Histogram {
         for (int i = 0; i < num_bins; ++i) {
             double bin_start = min_value + i * bin_width;
             double bin_end = bin_start + bin_width;
-            std::cout << "Bin " << i << " [" << bin_start << ", " << bin_end << "): "
-                      << std::string(bins[i], '*') << " (" << bins[i] << ")" << std::endl;
+            std::cout << "Bin " << i << " [" << bin_start << ", " << bin_end << "): " << "(" << bins[i] << ")" << std::endl;
         }
         std::cout << "Values above range (>=" << max_value << "): " << above_range_count << std::endl;
         std::cout << "-----------------" << std::endl;
@@ -137,9 +140,18 @@ struct Metric_Struct {
     int32_t num_charge_channels;
     int32_t num_light_channels;
 
-    std::array<int32_t, NUM_CHARGE_CHANNELS> charge_channel_num_samples{};
+    std::vector<int32_t> charge_channel_num_samples = std::vector<int32_t>(NUM_CHARGE_CHANNELS,0);
     std::vector<Histogram> charge_histograms{NUM_CHARGE_CHANNELS, Histogram(1024,4096,16)};
     std::vector<Histogram> light_histograms{NUM_LIGHT_CHANNELS, Histogram(1596,4096,20)};
+
+    void clear() {
+        num_fems = 0;
+        num_charge_channels = 0;
+        num_light_channels = 0;
+        for (auto &ch : charge_channel_num_samples) ch = 0;
+        for (auto &hist : charge_histograms) hist.clear();
+        for (auto &hist : light_histograms) hist.clear();
+    }
 
     std::vector<int32_t> serialize() const {
         // Start with the configuration metadata
@@ -184,6 +196,9 @@ struct Metric_Struct {
                   << "  num_charge_channels: " << num_charge_channels << "\n"
                   << "  num_light_channels: " << num_light_channels << "\n";
         for (const auto &nsamples : charge_channel_num_samples) { std::cout << nsamples << ","; }
+        std::cout << "\n";
+        charge_histograms.at(0).print();
+        light_histograms.at(0).print();
         std::cout << "\n"
         << "+++++++++++++++++++++++++++++++++++++++++"
         << std::endl;
