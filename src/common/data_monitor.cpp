@@ -10,7 +10,7 @@ namespace data_monitor {
 
     DataMonitor::DataMonitor(asio::io_context& io_context, const std::string& ip_address, const uint16_t command_port,
                              const uint16_t status_port, bool is_server, bool is_running) :
-    tcp_connection_(io_context, ip_address, command_port, is_server),
+    tcp_connection_(io_context, ip_address, command_port, is_server, false),
     random_generator_(std::random_device()()),
     event_distrib_(event_min, event_max),
     charge_channel_distrib_(charge_min,charge_max),
@@ -134,28 +134,43 @@ namespace data_monitor {
                 event_count++;
                 continue;
             }
+            lbw_metrics_.clear();
             metrics_.clear();
             EventStruct evt_data = process_events_->GetEventStruct();
-            std::cout << event_count << ": \n"
-                      << "FEM Evt#: " << evt_data.event_number.at(0) << "/"  << evt_data.event_number.at(1) << "\n"
-                      << "Charge/Light #Ch: " << evt_data.charge_adc.size() << "/" << evt_data.light_channel.size() << std::endl;
-
-            charge_algs_.ProcessEvent(evt_data, metrics_);
-            light_algs_.ProcessEvent(evt_data, metrics_);
+            // Calculate event metrics
+            charge_algs_.ProcessEvent(evt_data, lbw_metrics_, metrics_);
+            light_algs_.ProcessEvent(evt_data, lbw_metrics_, metrics_);
+            lbw_metrics_.print();
             metrics_.print();
-            auto tmp_vec = metrics_.serialize();
-            Command cmd(0x0, tmp_vec.size());
-            cmd.arguments = std::move(tmp_vec);
+
+            // Send metrics
+            SendMetrics(lbw_metrics_, metrics_);
 
             event_count++;
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
 
-        // 3.
-
-        // 4.
+        // std::cout << event_count << ": \n"
+        //   << "FEM Evt#: " << evt_data.event_number.at(0) << "/"  << evt_data.event_number.at(1) << "\n"
+        //   << "Charge/Light #Ch: " << evt_data.charge_adc.size() << "/" << evt_data.light_channel.size() << std::endl;
 
         // Command cmd(0x26, 3);
         // cmd.arguments = {selected_events_.at(0), charge_channel, light_channel}; // FIXME sending fake status
         // tcp_connection_.WriteSendBuffer(cmd);
     }
+
+    void DataMonitor::SendMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) {
+        // Send the LBW metrics first
+        auto tmp_vec = lbw_metrics.serialize();
+        Command lbw_cmd(0x4001, tmp_vec.size());
+        lbw_cmd.arguments = std::move(tmp_vec);
+        tcp_connection_.WriteSendBuffer(lbw_cmd);
+
+        // Send the metrics
+        tmp_vec = metrics.serialize();
+        Command cmd(0x4002, tmp_vec.size());
+        cmd.arguments = std::move(tmp_vec);
+        tcp_connection_.WriteSendBuffer(cmd);
+    }
+
 } // data_monitor

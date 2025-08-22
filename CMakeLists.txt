@@ -13,10 +13,12 @@ set(USE_PYTHON FALSE)
 
 add_subdirectory(readout_decoder)
 add_subdirectory(networking)
+add_subdirectory(PGramsCommCodec)
 
 include_directories(src/common
                     src/monitor_algs
                     readout_decoder/src
+                    PGramsCommCodec/include
                     networking)
 
 #file(GLOB DECODER_SRC readout_decoder/*.cpp)

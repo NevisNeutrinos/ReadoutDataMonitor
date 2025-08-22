@@ -18,10 +18,11 @@ public:
     *  Abstract method which will be the common interface to the monitoring algorithm.
     *
     *   @param [in] event:  The EvenStruct holding the decoded event data
+    *   @param lbw_metrics
     *
     * @return  Returns true on successful configuration, false on failure.
     */
-    virtual bool ProcessEvent(EventStruct &event, Metric_Struct &metrics) = 0;
+    virtual bool ProcessEvent(EventStruct &event, LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) = 0;
 
     /**
     *  Abstract method to clear a persistant state, e.g. counters, vectors.

@@ -12,10 +12,11 @@ public:
         LightAlgs();
         ~LightAlgs() override = default;
 
-        bool ProcessEvent(EventStruct &event, Metric_Struct &metrics) override;
+        bool ProcessEvent(EventStruct &event, LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) override;
         void Clear() override;
         void LightChannelDistribution(const std::vector<std::vector<uint16_t>> &light_words,
-                                      const std::vector<uint16_t> &light_channels, Metric_Struct &metrics);
+                                      const std::vector<uint16_t> &light_channels,
+                                      LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics);
 
     private:
 };

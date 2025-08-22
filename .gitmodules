@@ -4,3 +4,6 @@
 [submodule "networking"]
 	path = networking
 	url = https://github.com/NevisNeutrinos/networking.git
+[submodule "PGramsCommCodec"]
+	path = PGramsCommCodec
+	url = https://github.com/NevisNeutrinos/PGramsCommCodec.git

@@ -6,17 +6,17 @@
 #define CHARGE_ALGS_H
 
 #include "monitor_algs_base.hpp"
-#include "metrics.h"
 
 class ChargeAlgs : public MonitorAlgBase {
 public:
     ChargeAlgs();
     ~ChargeAlgs() override = default;
 
-    bool ProcessEvent(EventStruct &event, Metric_Struct &metrics) override;
+    bool ProcessEvent(EventStruct &event, LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) override;
     void Clear() override;
     void ChargeChannelDistribution(const std::vector<std::vector<uint16_t>> &charge_words,
-                                   const std::vector<uint16_t> &charge_channels, Metric_Struct &metrics);
+                                   const std::vector<uint16_t> &charge_channels,
+                                   LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics);
 
 
 private:

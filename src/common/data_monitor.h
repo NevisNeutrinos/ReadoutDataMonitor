@@ -42,6 +42,7 @@ private:
     void HandleCommand(Command& cmd);
     void RunDecoder();
     void StopDecoder();
+    void SendMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics);
 
     TCPConnection tcp_connection_;
     std::unique_ptr<ProcessEvents> process_events_;
@@ -72,7 +73,8 @@ private:
     constexpr static size_t EVENT_LOOP_MAX = 10000;
 
     // This struct will hold the metrics
-    Metric_Struct metrics_;
+    LowBwTpcMonitor lbw_metrics_;
+    TpcMonitor metrics_;
 
     // Define the metric algorithm classes
     LightAlgs light_algs_;
