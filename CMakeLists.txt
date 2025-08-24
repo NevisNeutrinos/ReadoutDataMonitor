@@ -25,12 +25,14 @@ include_directories(src/common
 file(GLOB NETWORK_SRC networking/tcp*.cpp)
 file(GLOB MONITOR_SRC src/common/*.cpp)
 file(GLOB MONITOR_ALGS_SRC src/monitor_algs/*.cpp)
+#file(GLOB MONITOR_STRUCT_SRC PGramsCommCodec/src*.cpp)
 
 add_executable(DataMonitor main.cpp
                 ${MONITOR_SRC}
                 ${MONITOR_ALGS_SRC}
                 ${NETWORK_SRC})
 
+target_link_libraries(DataMonitor PRIVATE datamon_core)
 target_link_libraries(DataMonitor PRIVATE pthread)
 target_link_libraries(DataMonitor PRIVATE raw_decoder)
 
@@ -39,5 +41,6 @@ add_executable(TestDataMonitor test_main.cpp
         ${MONITOR_ALGS_SRC}
         ${NETWORK_SRC})
 
+target_link_libraries(TestDataMonitor PRIVATE datamon_core)
 target_link_libraries(TestDataMonitor PRIVATE pthread)
 target_link_libraries(TestDataMonitor PRIVATE raw_decoder)

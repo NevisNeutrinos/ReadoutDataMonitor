@@ -9,7 +9,7 @@
 #include "process_events.h"
 #include "light_algs.h"
 #include "charge_algs.h"
-#include "metrics.h"
+// #include "metrics.h"
 #include <random>
 #include <atomic>
 #include <thread>
@@ -43,6 +43,7 @@ private:
     void RunDecoder();
     void StopDecoder();
     void SendMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics);
+    void SetMetrics(int32_t charge_metric, int32_t light_metric);
 
     TCPConnection tcp_connection_;
     std::unique_ptr<ProcessEvents> process_events_;
@@ -79,6 +80,9 @@ private:
     // Define the metric algorithm classes
     LightAlgs light_algs_;
     ChargeAlgs charge_algs_;
+
+    int32_t charge_metric_;
+    int32_t light_metric_;
 
     std::string monitor_file_;
 

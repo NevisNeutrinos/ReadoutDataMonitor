@@ -8,8 +8,8 @@ ChargeAlgs::ChargeAlgs() {}
 
 bool ChargeAlgs::ProcessEvent(EventStruct &event, LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) {
 
-    lbw_metrics.num_fems = event.slot_number.size();
-    lbw_metrics.num_charge_channels = event.charge_adc.size();
+    lbw_metrics.setNumFems(event.slot_number.size());
+    lbw_metrics.setNumChargeChannels(event.charge_adc.size());
 
     ChargeChannelDistribution(event.charge_adc, event.charge_channel, lbw_metrics, metrics);
     return true;
@@ -20,9 +20,9 @@ void ChargeAlgs::ChargeChannelDistribution(const std::vector<std::vector<uint16_
                                            LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) {
 
     for (const auto &channel : charge_channels) {
-        lbw_metrics.charge_channel_num_samples.at(channel) = charge_words.at(channel).size();
+        lbw_metrics.setChargeChannelSamples(channel, charge_words.at(channel).size());
         for (const auto &word : charge_words.at(channel)) {
-            metrics.charge_histograms.at(channel).fill(word);
+            metrics.fillChargeChannelHistogram(channel, word);
         }
     }
 }

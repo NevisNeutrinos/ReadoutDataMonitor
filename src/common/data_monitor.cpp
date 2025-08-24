@@ -37,6 +37,8 @@ namespace data_monitor {
     }
 
     void DataMonitor::RunDecoder() {
+        // Set the metric to use
+
         is_decoding_.store(true);
         decode_thread_ = std::thread(&DataMonitor::RunMetrics, this);
     }
@@ -52,6 +54,8 @@ namespace data_monitor {
         std::cout << "Received command: 0x" << std::hex << cmd.command << std::dec << std::endl;
         switch (cmd.command) {
             case kRunDecoder: {
+                // charge_metric_ = cmd.arguments.at(0);
+                // light_metric_ = cmd.arguments.at(1);
                 RunDecoder();
                 break;
             }
@@ -65,6 +69,26 @@ namespace data_monitor {
             }
             default: {
                 std::cerr << "Unknown command: 0x" << std::hex << cmd.command << std::dec << std::endl;
+            }
+        }
+    }
+
+    void SetMetrics(int32_t charge_metric, int32_t light_metric) {
+        switch (charge_metric) {
+            case 0x1: {
+                // TpcMonitor charge_monitor_;
+                break;
+            }
+            default: {
+                std::cerr << "Unknown charge metric: 0x" << std::hex << charge_metric << std::dec << std::endl;
+            }
+        }
+        switch (light_metric) {
+            case 0x1: {
+                break;
+            }
+            default: {
+                std::cerr << "Unknown light metric: 0x" << std::hex << charge_metric << std::dec << std::endl;
             }
         }
     }

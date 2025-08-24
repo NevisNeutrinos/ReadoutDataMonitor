@@ -6,7 +6,9 @@
 #define MONITOR_ALGS_BASE_HPP
 
 #include "process_events.h"
-#include "metrics.h"
+// #include "metrics.h"
+#include "tpc_monitor.h"
+#include "tpc_monitor_lbw.h"
 
 class MonitorAlgBase {
 public:
