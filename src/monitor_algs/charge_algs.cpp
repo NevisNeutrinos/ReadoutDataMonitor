@@ -4,7 +4,6 @@
 
 #include "charge_algs.h"
 
-ChargeAlgs::ChargeAlgs() {}
 
 bool ChargeAlgs::ProcessEvent(EventStruct &event, LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) {
 

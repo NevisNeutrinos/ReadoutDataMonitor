@@ -9,7 +9,6 @@
 #include "process_events.h"
 #include "light_algs.h"
 #include "charge_algs.h"
-// #include "metrics.h"
 #include <random>
 #include <atomic>
 #include <thread>

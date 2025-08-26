@@ -9,7 +9,7 @@
 
 class LightAlgs : public MonitorAlgBase {
 public:
-        LightAlgs();
+        LightAlgs() = default;
         ~LightAlgs() override = default;
 
         bool ProcessEvent(EventStruct &event, LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) override;
@@ -20,7 +20,5 @@ public:
 
     private:
 };
-
-
 
 #endif //LIGHT_ALGS_H

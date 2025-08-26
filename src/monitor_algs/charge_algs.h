@@ -9,7 +9,7 @@
 
 class ChargeAlgs : public MonitorAlgBase {
 public:
-    ChargeAlgs();
+    ChargeAlgs() = default;
     ~ChargeAlgs() override = default;
 
     bool ProcessEvent(EventStruct &event, LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) override;

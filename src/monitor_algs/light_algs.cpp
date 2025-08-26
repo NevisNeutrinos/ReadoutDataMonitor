@@ -5,7 +5,6 @@
 #include "light_algs.h"
 #include <set>
 
-LightAlgs::LightAlgs() {}
 
 bool LightAlgs::ProcessEvent(EventStruct &event, LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) {
 
