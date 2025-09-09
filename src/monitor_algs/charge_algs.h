@@ -17,6 +17,7 @@ public:
     void ChargeChannelDistribution(const std::vector<std::vector<uint16_t>> &charge_words,
                                    const std::vector<uint16_t> &charge_channels,
                                    LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics);
+    std::pair<int, int> MeanStdDev(const std::vector<uint16_t> &channel_charge_words);
 
 
 private:
