@@ -6,62 +6,78 @@
 
 #include <cmath>
 #include <numeric>
+#include <algorithm>
 
 
-bool ChargeAlgs::ProcessEvent(EventStruct &event, LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) {
-
-    lbw_metrics.setNumFems(event.slot_number.size());
-    lbw_metrics.setNumChargeChannels(event.charge_adc.size());
-
-    ChargeChannelDistribution(event.charge_adc, event.charge_channel, lbw_metrics, metrics);
+bool ChargeAlgs::ProcessEvent(EventStruct &event) {
     return true;
 }
 
-void ChargeAlgs::ChargeChannelDistribution(const std::vector<std::vector<uint16_t>> &charge_words,
-                                           const std::vector<uint16_t> &charge_channels,
-                                           LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) {
+void ChargeAlgs::MinimalSummary(EventStruct &event) {
 
-    for (const auto &channel : charge_channels) {
-        lbw_metrics.setChargeChannelSamples(channel, charge_words.at(channel).size());
-        auto [mean, stddev] = MeanStdDev(charge_words.at(channel));
-        for (const auto &word : charge_words.at(channel)) {
-            metrics.fillChargeChannelHistogram(channel, word);
-        }
+    for (const auto &channel : event.charge_channel) {
+        BaselineRms(event.charge_adc.at(channel), channel);
+        HitsAboveThreshold(event.charge_adc.at(channel), channel); // needs to always follow baseline & RMS
     }
 }
 
-std::pair<int, int> ChargeAlgs::MeanStdDev(const std::vector<uint16_t> &channel_charge_words) {
-    // Calculate the mean for the channel
-    double mean = std::accumulate(channel_charge_words.begin(), channel_charge_words.end(), 0);
-    mean /= channel_charge_words.size();
+void ChargeAlgs::BaselineRms(const std::vector<uint16_t> &channel_charge_words, uint16_t channel) {
+    // Calculate the baseline and RMS for the channel, only use the first 5 samples
+    size_t num_samples = 5;
 
-    // Reserve the vector for the squared difference.
-    std::vector<double> square_difference;
-    square_difference.reserve(channel_charge_words.size());
+    for (size_t i = 0; i < num_samples; i++) {
+        baseline_[channel] += channel_charge_words[i];
+        rms_[channel] += channel_charge_words[i] * channel_charge_words[i];
+    }
+    baseline_[channel] /= num_samples;
+    rms_[channel] /= num_samples;
+}
 
-    /** Calculate standard deviation
-     * 1. Calculate the difference between each element and the mean: (x - mu)
-     * 2. Square the result: (x - mu) * (x - mu)
-     * 3. Sum result SUM((x - mu) * (x - mu))
+void ChargeAlgs::HitsAboveThreshold(const std::vector<uint16_t> &channel_charge_words, uint16_t channel) {
+    // Use baseline shifted threshold instead of baseline subtraction to avoid pesky 16b int overflows
+    double rms_threshold = 2.0;
+    double threshold = baseline_[channel] + rms_threshold * rms_[channel];
+
+    for (auto adc_word : channel_charge_words) {
+        if (adc_word > threshold) charge_hits_[channel]++;
+    }
+}
+
+void ChargeAlgs::UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) {
+
+    if (num_events_ < 1) { num_events_ = 1; } // Avoid divide by 0
+    /*
+     * Finish the aggregated Baseline & RMS calculation and update the metrics
      */
 
-    // 1. & 2. Calculate the squared difference between each element and the mean: (x - mu) * (x - mu)
-    std::transform(channel_charge_words.begin(), channel_charge_words.end(),
-        square_difference.begin(), // write results into this vector
-        [mean](int element) { return (element - mean) * (element - mean); }
-    );
+    std::vector<int> baseline_int(baseline_.size());
+    std::vector<int> rms_int(rms_.size());
+    for (size_t i = 0; i < NUM_CHANNELS; i++) {
+        baseline_int[i] = static_cast<int>(baseline_[i] / num_events_);
+        // TODO could perform the sqrt on ground for safety and efficiency
+        // check to make sure rms is non-negative, should never be but better to avoid NaN
+        rms_int[i] = static_cast<int>((rms_[i] < 0) ? INT32_MAX : std::sqrt(rms_[i] / num_events_));
+    }
 
-    // 3. Sum of squared differences
-    double variance = std::accumulate(square_difference.begin(), square_difference.end(), 0.0);
-    variance /= channel_charge_words.size();
+    // TODO add to metrics
 
-    // Finally since we are returning a signed int, we cast to it. We also know the range
-    // of inputs is [0,4095] so the mean and standard deviation will always be 0 <= X <= 4095
-    int mean_int = static_cast<int>(mean);
-    int stddev_int = static_cast<int>(std::sqrt(variance));
+    /*
+     * Average hits per event and the charge hits to the metrics
+     */
+    for (auto &hits : charge_hits_) { hits /= num_events_; }
 
-    return std::pair<int, int>(mean_int, stddev_int);
 }
 
 void ChargeAlgs::Clear() {
+    // Clear the metrics between queries
+    for (size_t i = 0; i < NUM_CHANNELS; i++) {
+        baseline_[i] = 0;
+        rms_[i] = 0;
+        charge_hits_[i] = 0;
+    }
+    num_events_ = 0;
+}
+
+bool ChargeAlgs::UpdateMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) {
+    return true;
 }

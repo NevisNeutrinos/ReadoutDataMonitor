@@ -12,12 +12,14 @@ public:
     ChargeAlgs() = default;
     ~ChargeAlgs() override = default;
 
-    bool ProcessEvent(EventStruct &event, LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) override;
+    bool ProcessEvent(EventStruct &event) override;
+    bool UpdateMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) override;
     void Clear() override;
-    void ChargeChannelDistribution(const std::vector<std::vector<uint16_t>> &charge_words,
-                                   const std::vector<uint16_t> &charge_channels,
-                                   LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics);
-    std::pair<int, int> MeanStdDev(const std::vector<uint16_t> &channel_charge_words);
+
+    void MinimalSummary(EventStruct &event);
+    void UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics);
+    void BaselineRms(const std::vector<uint16_t> &channel_charge_words, uint16_t channel);
+    void HitsAboveThreshold(const std::vector<uint16_t> &channel_charge_words, uint16_t channel);
 
 
 private:
@@ -27,6 +29,11 @@ private:
     constexpr static size_t NUM_SAMPLES = 763;
 
     Histogram charge_histogram_{1024, 4096, 16};
+
+    std::array<double, NUM_CHANNELS> rms_{0};
+    std::array<double, NUM_CHANNELS> baseline_{0};
+    std::array<size_t, NUM_CHANNELS> charge_hits_{0};
+    size_t num_events_ = 0;
 
 };
 

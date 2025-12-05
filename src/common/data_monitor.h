@@ -13,6 +13,7 @@
 #include <atomic>
 #include <thread>
 #include <cstdint>
+#include <functional>
 
 namespace data_monitor {
 
@@ -21,30 +22,36 @@ public:
 
     DataMonitor(asio::io_context& io_context, const std::string& ip_address,
                 uint16_t command_port, uint16_t status_port, bool is_server, bool is_running);
-    ~DataMonitor() = default;
+    ~DataMonitor();
 
     void SetRunning(bool run);
 
     // FIXME shoulf be private, public for testing
-    void OpenFile();
-    void DecodeEvent(std::vector<int32_t>& args);
-    void SelectEvents();
-    uint16_t SelectChargeChannel();
-    size_t SelectLightChannel();
-    void GetEvents(uint16_t charge_channel, uint16_t light_channel);
+    bool OpenFile();
+    void ProcessFile();
+    void GetEventMetrics();
     void ReceiveCommand();
     void SetMonitorFile(const std::string &monitor_file) { monitor_file_ = monitor_file; }
     void RunMetrics();
 
+    // Expose these so we can run it from command line
+    void HandleCommand(Command& cmd);
+
 private:
 
-    void HandleCommand(Command& cmd);
-    void RunDecoder();
-    void StopDecoder();
+    // Command/Conrol helper fucntions
+    void setFileName(std::vector<int32_t>& args);
+    void setNumEvent(std::vector<int32_t>& args);
+
+    // Minimal metrics
+    void CreateMinimalMetrics(EventStruct & event);
+    void UpdateMinimalMetrics();
+
     void SendMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics);
     void SetMetrics(int32_t charge_metric, int32_t light_metric);
 
-    TCPConnection tcp_connection_;
+    TCPConnection command_client_;
+    TCPConnection status_client_;
     std::unique_ptr<ProcessEvents> process_events_;
 
     // Seed the random number generator
@@ -68,7 +75,8 @@ private:
     std::thread decode_thread_;
 
     // The event step size, analyze every N events
-    constexpr static size_t event_stride_ = 500;
+    size_t process_num_events_;
+    size_t event_stride_ = 500;
     // Set a hard upper limit to ensure no infinite loops while decoding
     constexpr static size_t EVENT_LOOP_MAX = 10000;
 
@@ -86,10 +94,16 @@ private:
     std::string monitor_file_;
 
     enum ControlCmds : uint16_t {
-        kRunDecoder = 1,
+        kMinimalQuery = 1,
         kStopDecoder = 2,
         kDecodeEvent = 3
     };
+
+    // Function to process the data and create metrics
+    std::function<void(EventStruct&)> metric_creator_;
+    std::function<void()> update_metrics_;
+
+    std::atomic_bool debug_;
 
 };
 

@@ -23,7 +23,14 @@ public:
     *
     * @return  Returns true on successful configuration, false on failure.
     */
-    virtual bool ProcessEvent(EventStruct &event, LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) = 0;
+    virtual bool ProcessEvent(EventStruct &event) = 0;
+
+    /**
+    *  Abstract method to update metrics to send to ground so they can be accumulated across events.
+    *
+    * @return
+    */
+    virtual bool UpdateMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) = 0;
 
     /**
     *  Abstract method to clear a persistant state, e.g. counters, vectors.
