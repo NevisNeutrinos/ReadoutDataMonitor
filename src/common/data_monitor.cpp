@@ -147,17 +147,17 @@ namespace data_monitor {
     }
 
     void DataMonitor::SendMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) {
-        // Send the LBW metrics first
+        // Send the LBW metrics
         auto tmp_vec = lbw_metrics.serialize();
         Command lbw_cmd(0x4001, tmp_vec.size());
         lbw_cmd.arguments = std::move(tmp_vec);
         status_client_.WriteSendBuffer(lbw_cmd);
 
-        // Send the metrics
-        tmp_vec = metrics.serialize();
-        Command cmd(0x4002, tmp_vec.size());
-        cmd.arguments = std::move(tmp_vec);
-        status_client_.WriteSendBuffer(cmd);
+        // // Send the metrics
+        // tmp_vec = metrics.serialize();
+        // Command cmd(0x4002, tmp_vec.size());
+        // cmd.arguments = std::move(tmp_vec);
+        // status_client_.WriteSendBuffer(cmd);
     }
 
     void DataMonitor::CreateMinimalMetrics(EventStruct & event) {
@@ -172,6 +172,10 @@ namespace data_monitor {
         if (debug_) std::cout << "Updated charge.." << std::endl;
         light_algs_.UpdateMinimalMetrics(lbw_metrics_, metrics_);
         if (debug_) std::cout << "Updated light.." << std::endl;
+        if (debug_) lbw_metrics_.print();
+        // Clear the metrics for the next file
+        charge_algs_.Clear();
+        light_algs_.Clear();
     }
 
     // void DataMonitor::SelectEvents() {

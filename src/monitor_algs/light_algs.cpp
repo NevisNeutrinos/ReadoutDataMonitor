@@ -29,6 +29,7 @@ void LightAlgs::MinimalSummary(EventStruct &event) {
         }
         BaselineRms(event.light_adc.at(i), event.light_channel.at(i));
     }
+    // num_events_++;
 }
 
 void LightAlgs::BaselineRms(const std::vector<uint16_t> &channel_charge_words, uint16_t channel) {
@@ -38,12 +39,17 @@ void LightAlgs::BaselineRms(const std::vector<uint16_t> &channel_charge_words, u
     size_t num_samples = channel_charge_words.size() > 7 ? 8 : channel_charge_words.size();
     if (num_samples < 1) return;
 
+    double baseline_sum = 0;
+    double rms_sum = 0;
     for (size_t i = 0; i < num_samples; i++) {
-        baseline_[channel] += channel_charge_words[i];
-        rms_[channel] += channel_charge_words[i] * channel_charge_words[i];
+        baseline_sum += channel_charge_words[i];
+        rms_sum += channel_charge_words[i] * channel_charge_words[i];
     }
-    baseline_[channel] /= num_samples;
-    rms_[channel] /= num_samples;
+    baseline_sum /= num_samples;
+    rms_sum /= num_samples;
+
+    baseline_[channel] += baseline_sum;
+    rms_[channel] += rms_sum;
 }
 
 
@@ -51,23 +57,24 @@ void LightAlgs::UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &m
     if (num_events_ < 1) { num_events_ = 1; } // Avoid divide by 0
     /*
      * Finish the aggregated Baseline & RMS calculation and update the metrics
+     * Average hits ROIs event and the charge hits to the metrics
      */
 
-    std::vector<int> baseline_int(baseline_.size());
-    std::vector<int> rms_int(rms_.size());
+    std::array<int32_t, NUM_LIGHT_CHANNELS> baseline_int;
+    std::array<int32_t, NUM_LIGHT_CHANNELS> rms_int;
+    std::array<int32_t, NUM_LIGHT_CHANNELS> avg_rois_int;
     for (size_t i = 0; i < NUM_LIGHT_CHANNELS; i++) {
         baseline_int[i] = static_cast<int>(baseline_[i] / num_events_);
         // TODO could perform the sqrt on ground for safety and efficiency
         // check to make sure rms is non-negative, should never be but better to avoid NaN
         rms_int[i] = static_cast<int>((rms_[i] < 0) ? INT32_MAX : std::sqrt(rms_[i] / num_events_));
+        avg_rois_int[i] = static_cast<int32_t>(light_rois_[i] / num_events_);
     }
 
-    // TODO add to metrics
-
-    /*
-     * Average hits per event and the charge hits to the metrics
-     */
-    for (auto &rois : light_rois_) { rois /= num_events_; }
+    // update the metrics
+    lbw_metrics.setLightBaselines(baseline_int);
+    lbw_metrics.setLightRms(rms_int);
+    lbw_metrics.setLightAvgNumRois(avg_rois_int);
 }
 
 

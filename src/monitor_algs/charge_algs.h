@@ -25,14 +25,14 @@ public:
 private:
 
     // Static variables
-    constexpr static size_t NUM_CHANNELS = 192;
-    constexpr static size_t NUM_SAMPLES = 763;
+    // constexpr static size_t NUM_CHANNELS = 192;
+    // constexpr static size_t NUM_SAMPLES = 763;
 
     Histogram charge_histogram_{1024, 4096, 16};
 
-    std::array<double, NUM_CHANNELS> rms_{0};
-    std::array<double, NUM_CHANNELS> baseline_{0};
-    std::array<size_t, NUM_CHANNELS> charge_hits_{0};
+    std::array<double, NUM_CHARGE_CHANNELS> rms_{0};
+    std::array<double, NUM_CHARGE_CHANNELS> baseline_{0};
+    std::array<size_t, NUM_CHARGE_CHANNELS> charge_hits_{0};
     size_t num_events_ = 0;
 
 };
