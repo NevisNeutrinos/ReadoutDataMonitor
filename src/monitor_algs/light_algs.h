@@ -5,17 +5,19 @@
 #ifndef LIGHT_ALGS_H
 #define LIGHT_ALGS_H
 
-#include "monitor_algs_base.hpp"
+//#include "monitor_algs_base.hpp"
+#include "tpc_monitor.h"
+#include "process_events.h"
+#include "tpc_monitor_lbw.h"
 
-class LightAlgs : public MonitorAlgBase {
+class LightAlgs {
 public:
     LightAlgs() = default;
-    ~LightAlgs() override = default;
+    ~LightAlgs() = default;
 
-    bool ProcessEvent(EventStruct &event) override;
-    void Clear() override;
-    bool UpdateMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) override;
-
+//    bool ProcessEvent(EventStruct &event) override;
+//    bool UpdateMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) override;
+    void Clear();
 
     void MinimalSummary(EventStruct& event);
     void UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics);

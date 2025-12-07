@@ -5,16 +5,19 @@
 #ifndef CHARGE_ALGS_H
 #define CHARGE_ALGS_H
 
-#include "monitor_algs_base.hpp"
+//#include "monitor_algs_base.hpp"
+#include "tpc_monitor.h"
+#include "process_events.h"
+#include "tpc_monitor_lbw.h"
 
-class ChargeAlgs : public MonitorAlgBase {
+class ChargeAlgs {
 public:
     ChargeAlgs() = default;
-    ~ChargeAlgs() override = default;
+    ~ChargeAlgs() = default;
 
-    bool ProcessEvent(EventStruct &event) override;
-    bool UpdateMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) override;
-    void Clear() override;
+//    bool ProcessEvent(EventStruct &event) override;
+//    bool UpdateMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) override;
+    void Clear();
 
     void MinimalSummary(EventStruct &event);
     void UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics);

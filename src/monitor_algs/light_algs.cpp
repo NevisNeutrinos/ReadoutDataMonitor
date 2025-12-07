@@ -6,12 +6,12 @@
 #include <cmath>
 
 
-bool LightAlgs::ProcessEvent(EventStruct &event) {
-
-    // Get the number of light channels
-
-    return true;
-}
+//bool LightAlgs::ProcessEvent(EventStruct &event) {
+//
+//    // Get the number of light channels
+//
+//    return true;
+//}
 
 void LightAlgs::MinimalSummary(EventStruct &event) {
     // The unbiased light readout corresponds to ID 0x4. We want to use this to get an unbiased snapshot
@@ -78,9 +78,9 @@ void LightAlgs::UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &m
 }
 
 
-bool LightAlgs::UpdateMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) {
-    return true;
-}
+//bool LightAlgs::UpdateMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) {
+//    return true;
+//}
 
 
 void LightAlgs::Clear() {

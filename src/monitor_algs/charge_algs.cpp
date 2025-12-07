@@ -9,9 +9,9 @@
 #include <algorithm>
 
 
-bool ChargeAlgs::ProcessEvent(EventStruct &event) {
-    return true;
-}
+//bool ChargeAlgs::ProcessEvent(EventStruct &event) {
+//    return true;
+//}
 
 void ChargeAlgs::MinimalSummary(EventStruct &event) {
 
@@ -87,6 +87,6 @@ void ChargeAlgs::Clear() {
     num_events_ = 0;
 }
 
-bool ChargeAlgs::UpdateMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) {
-    return true;
-}
+//bool ChargeAlgs::UpdateMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) {
+//    return true;
+//}
