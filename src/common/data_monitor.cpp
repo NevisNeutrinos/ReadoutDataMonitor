@@ -23,6 +23,7 @@ namespace data_monitor {
         std::cout << "DM" << std::endl;
         process_events_ = std::make_unique<ProcessEvents>(light_slot_, false, std::vector<uint16_t>(), false);
         process_events_->UseEventStride(true);
+        std::cout << "DM End" << std::endl;
     }
 
     DataMonitor::~DataMonitor() {
@@ -35,6 +36,11 @@ namespace data_monitor {
         is_running_.store(run);
         command_client_.setStopCmdRead(!run);
         status_client_.setStopCmdRead(!run);
+    }
+   
+    void DataMonitor::Run() {
+        is_running_ = true;
+        ReceiveCommand();
     }
 
     void DataMonitor::ReceiveCommand() {
@@ -53,7 +59,9 @@ namespace data_monitor {
     }
 
     void DataMonitor::setFileName(std::vector<int32_t> &args) {
-        std::string base_path("/home/pgrams/data/nov2025_integration_data/readout_data/");
+        // std::string base_path("/home/pgrams/data/nov2025_integration_data/readout_data/");
+        std::string base_path("/data/readout_data/");
+        //std::string base_path("/home/sabertooth2/GramsReadout/build/ReadoutDataMonitor/");
         int32_t run_number = args.at(0);
         int32_t file_number = args.at(1);
         monitor_file_ = base_path + "pGRAMS_bin_" + std::to_string(run_number) + "_" + std::to_string(file_number) + ".dat";
@@ -63,7 +71,7 @@ namespace data_monitor {
     void DataMonitor:: HandleCommand(Command& cmd) {
         std::cout << "Received command: 0x" << std::hex << cmd.command << std::dec << std::endl;
         switch (cmd.command) {
-            case kMinimalQuery: {
+            case static_cast<int>(CommunicationCodes::COL_Query_LB_Data): {
                 // Create file name
                 if (cmd.arguments.size() < 4) break;
                 setFileName(cmd.arguments);
@@ -109,21 +117,16 @@ namespace data_monitor {
         }
     }
 
-    bool DataMonitor::OpenFile() {
-        // Using file and run sent from ground
-        // const std::string file_name = "pGRAMS_bin_" + std::to_string(1) + "_" + std::to_string(0) + ".dat";
+    void DataMonitor::ProcessFile() {
+        // if (!OpenFile()) { return; }
         if (!process_events_->OpenFile(monitor_file_)) {
             std::cerr << "Failed to load file!" << std::endl;
         }
-    }
-
-    void DataMonitor::ProcessFile() {
-        // if (!OpenFile()) { return; }
-        OpenFile();
         GetEventMetrics();
     }
 
     void DataMonitor::GetEventMetrics() {
+        if (debug_) std::cout << "entering processing" << std::endl;
         // Set the decoder stride
         process_events_->SetEventStride(event_stride_);
         // Loop through desired events, either adjacent events or with some stride
@@ -152,7 +155,8 @@ namespace data_monitor {
         Command lbw_cmd(0x4001, tmp_vec.size());
         lbw_cmd.arguments = std::move(tmp_vec);
         status_client_.WriteSendBuffer(lbw_cmd);
-
+        
+        std::cout << "Sent metrics.." << std::endl;
         // // Send the metrics
         // tmp_vec = metrics.serialize();
         // Command cmd(0x4002, tmp_vec.size());

@@ -1,9 +1,3 @@
 [submodule "readout_decoder"]
 	path = readout_decoder
 	url = https://github.com/NevisNeutrinos/readout_decoder.git
-[submodule "networking"]
-	path = networking
-	url = https://github.com/NevisNeutrinos/networking.git
-[submodule "PGramsCommCodec"]
-	path = PGramsCommCodec
-	url = https://github.com/NevisNeutrinos/PGramsCommCodec.git

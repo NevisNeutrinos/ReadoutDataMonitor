@@ -16,20 +16,20 @@ bool LightAlgs::ProcessEvent(EventStruct &event) {
 void LightAlgs::MinimalSummary(EventStruct &event) {
     // The unbiased light readout corresponds to ID 0x4. We want to use this to get an unbiased snapshot
     // of channel baseline & RMS loosely correlated with the trigger since it initiates the unbiased readout
-    uint8_t beam_gate_id = 0x4;
+    uint8_t beam_gate_id = 0x1; //0x4;
 
     std::cout << "Size ID/Ch/ROI: " << event.light_trigger_id.size() << "/"
             << event.light_channel.size() << "/" << event.light_adc.size() << std::endl;
 
     for (size_t i = 0; i < event.light_channel.size(); i++) { // loop over each RI in the event
         if (event.light_channel[i] > NUM_LIGHT_CHANNELS-1) continue;
+        light_rois_[event.light_channel.at(i)]++;
         if (event.light_trigger_id.at(i) != beam_gate_id) { // should be a Cosmic ie Disc 1 ROI
-            light_rois_[event.light_channel.at(i)]++;
             continue; // skip non-beam gate readout ROIs
         }
         BaselineRms(event.light_adc.at(i), event.light_channel.at(i));
     }
-    // num_events_++;
+    num_events_++;
 }
 
 void LightAlgs::BaselineRms(const std::vector<uint16_t> &channel_charge_words, uint16_t channel) {
@@ -64,11 +64,11 @@ void LightAlgs::UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &m
     std::array<int32_t, NUM_LIGHT_CHANNELS> rms_int;
     std::array<int32_t, NUM_LIGHT_CHANNELS> avg_rois_int;
     for (size_t i = 0; i < NUM_LIGHT_CHANNELS; i++) {
-        baseline_int[i] = static_cast<int>(baseline_[i] / num_events_);
+        baseline_int[i] = static_cast<int>(baseline_[i] / light_rois_[i]);
         // TODO could perform the sqrt on ground for safety and efficiency
         // check to make sure rms is non-negative, should never be but better to avoid NaN
-        rms_int[i] = static_cast<int>((rms_[i] < 0) ? INT32_MAX : std::sqrt(rms_[i] / num_events_));
-        avg_rois_int[i] = static_cast<int32_t>(light_rois_[i] / num_events_);
+        rms_int[i] = static_cast<int>((rms_[i] < 0) ? INT32_MAX : std::sqrt(rms_[i] / light_rois_[i]));
+        avg_rois_int[i] = static_cast<int32_t>(8 * light_rois_[i] / num_events_);
     }
 
     // update the metrics

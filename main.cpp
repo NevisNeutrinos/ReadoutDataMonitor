@@ -21,7 +21,7 @@ int GetUserInput() {
 
     switch (choice) {
         case 0x1: {
-            return 0x1;
+            return static_cast<int>(pgrams::communication::CommunicationCodes::COL_Query_LB_Data);
         } case -1: {
             return -1;
         } default: {

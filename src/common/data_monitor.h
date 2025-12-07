@@ -6,6 +6,7 @@
 #define DATA_MONITOR_H
 
 #include "tcp_connection.h"
+#include "communication_codes.h"
 #include "process_events.h"
 #include "light_algs.h"
 #include "charge_algs.h"
@@ -17,6 +18,8 @@
 
 namespace data_monitor {
 
+    using namespace pgrams::communication;
+
 class DataMonitor {
 public:
 
@@ -27,9 +30,9 @@ public:
     void SetRunning(bool run);
 
     // FIXME shoulf be private, public for testing
-    bool OpenFile();
     void ProcessFile();
     void GetEventMetrics();
+    void Run();
     void ReceiveCommand();
     void SetMonitorFile(const std::string &monitor_file) { monitor_file_ = monitor_file; }
     void RunMetrics();

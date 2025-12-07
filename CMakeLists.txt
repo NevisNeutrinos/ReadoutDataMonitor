@@ -12,20 +12,19 @@ add_compile_options(-Wall -Wextra -pedantic)
 set(USE_PYTHON FALSE)
 
 add_subdirectory(readout_decoder)
-add_subdirectory(networking)
-add_subdirectory(PGramsCommCodec)
 
+include_directories(/home/sabertooth2/asio-1.30.2/include)
 include_directories(src/common
                     src/monitor_algs
                     readout_decoder/src
-                    PGramsCommCodec/include
-                    networking)
+                    ../PGramsCommCodec/include
+                    ../networking)
 
 #file(GLOB DECODER_SRC readout_decoder/*.cpp)
-file(GLOB NETWORK_SRC networking/tcp*.cpp)
+file(GLOB NETWORK_SRC ../networking/tcp*.cpp)
 file(GLOB MONITOR_SRC src/common/*.cpp)
 file(GLOB MONITOR_ALGS_SRC src/monitor_algs/*.cpp)
-file(GLOB MONITOR_STRUCT_SRC PGramsCommCodec/src*.cpp)
+file(GLOB MONITOR_STRUCT_SRC ../PGramsCommCodec/src*.cpp)
 
 add_executable(DataMonitor main.cpp
                 ${MONITOR_SRC}
@@ -36,11 +35,3 @@ target_link_libraries(DataMonitor PRIVATE datamon_core)
 target_link_libraries(DataMonitor PRIVATE pthread)
 target_link_libraries(DataMonitor PRIVATE raw_decoder)
 
-#add_executable(TestDataMonitor test_main.cpp
-#        ${MONITOR_SRC}
-#        ${MONITOR_ALGS_SRC}
-#        ${NETWORK_SRC})
-#
-#target_link_libraries(TestDataMonitor PRIVATE datamon_core)
-#target_link_libraries(TestDataMonitor PRIVATE pthread)
-#target_link_libraries(TestDataMonitor PRIVATE raw_decoder)
