@@ -29,6 +29,7 @@ public:
     std::array<double, NUM_LIGHT_CHANNELS> rms_{0};
     std::array<double, NUM_LIGHT_CHANNELS> baseline_{0};
     std::array<size_t, NUM_LIGHT_CHANNELS> light_rois_{0};
+    std::array<size_t, NUM_LIGHT_CHANNELS> light_baseline_rms_norm_{0};
     size_t num_events_ = 0;
 
 };
