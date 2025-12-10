@@ -50,7 +50,12 @@ private:
     void CreateMinimalMetrics(EventStruct & event);
     void UpdateMinimalMetrics();
 
+    // Send events
+    void CreateEventMetrics(EventStruct & event);
+    void UpdateEventMetrics();
+
     void SendMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics);
+    void SendMetric(std::vector<int32_t> &metric_vec, uint32_t metric_id);
     void SetMetrics(int32_t charge_metric, int32_t light_metric);
 
     TCPConnection command_client_;
@@ -86,6 +91,8 @@ private:
     // This struct will hold the metrics
     LowBwTpcMonitor lbw_metrics_;
     TpcMonitor metrics_;
+    TpcMonitorChargeEvent charge_event_metric_;
+    TpcMonitorLightEvent light_event_metric_;
 
     // Define the metric algorithm classes
     LightAlgs light_algs_;
@@ -107,6 +114,8 @@ private:
     std::function<void()> update_metrics_;
 
     std::atomic_bool debug_;
+    bool choose_random_ = false;
+    size_t num_light_rois_ = 0;
 
 };
 

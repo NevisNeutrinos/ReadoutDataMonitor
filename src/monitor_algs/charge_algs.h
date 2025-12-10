@@ -9,6 +9,7 @@
 #include "tpc_monitor.h"
 #include "process_events.h"
 #include "tpc_monitor_lbw.h"
+#include "tpc_monitor_charge_event.h"
 
 class ChargeAlgs {
 public:
@@ -18,14 +19,20 @@ public:
 //    bool ProcessEvent(EventStruct &event) override;
 //    bool UpdateMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) override;
     void Clear();
-
+    // Minimal or low-bandwidth
     void MinimalSummary(EventStruct &event);
     void UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics);
     void BaselineRms(const std::vector<uint16_t> &channel_charge_words, uint16_t channel);
     void HitsAboveThreshold(const std::vector<uint16_t> &channel_charge_words, uint16_t channel);
-
+    // Return an event
+    void GetChargeEvent(EventStruct &event);
+    std::vector<int32_t> UpdateChargeEvent(TpcMonitorChargeEvent &tpc_charge_metric, size_t channel);
 
 private:
+
+    // Metric classes
+    // LowBwTpcMonitor lbw_metrics_;
+    // TpcMonitorChargeEvent charge_event_;
 
     // Static variables
     // constexpr static size_t NUM_CHANNELS = 192;
@@ -36,6 +43,7 @@ private:
     std::array<double, NUM_CHARGE_CHANNELS> rms_{0};
     std::array<double, NUM_CHARGE_CHANNELS> baseline_{0};
     std::array<size_t, NUM_CHARGE_CHANNELS> charge_hits_{0};
+    std::array<std::array<int32_t, CHARGE_ONE_FRAME>, NUM_CHARGE_CHANNELS> charge_oneframe_samples_{0};
     size_t num_events_ = 0;
 
 };

@@ -9,6 +9,7 @@
 #include "tpc_monitor.h"
 #include "process_events.h"
 #include "tpc_monitor_lbw.h"
+#include "tpc_monitor_light_event.h"
 
 class LightAlgs {
 public:
@@ -21,6 +22,9 @@ public:
 
     void MinimalSummary(EventStruct& event);
     void UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics);
+    // Return an event
+    size_t GetLightEvent(EventStruct &event);
+    std::vector<int32_t> UpdateLightEvent(TpcMonitorLightEvent &tpc_light_metric, size_t roi);
 
     private:
 
@@ -30,6 +34,8 @@ public:
     std::array<double, NUM_LIGHT_CHANNELS> baseline_{0};
     std::array<size_t, NUM_LIGHT_CHANNELS> light_rois_{0};
     std::array<size_t, NUM_LIGHT_CHANNELS> light_baseline_rms_norm_{0};
+    std::vector<std::array<int32_t, NUM_LIGHT_SAMPLES>> light_cosmic_rois_{0};
+    std::vector<uint16_t> light_roi_channels_{0};
     size_t num_events_ = 0;
 
 };

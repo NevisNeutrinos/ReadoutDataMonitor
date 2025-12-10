@@ -73,7 +73,7 @@ namespace data_monitor {
         switch (cmd.command) {
             case static_cast<int>(CommunicationCodes::COL_Query_LB_Data): {
                 // Create file name
-                if (cmd.arguments.size() < 4) break;
+                if (cmd.arguments.size() < 5) break;
                 setFileName(cmd.arguments);
                 setNumEvent(cmd.arguments);
                 // Set the functions to process events, create metrics and update them
@@ -81,11 +81,22 @@ namespace data_monitor {
                 // class we have to make it explicit with a lambda function
                 metric_creator_ = [this](EventStruct& evt) { this->CreateMinimalMetrics(evt); };
                 update_metrics_ = [this]() { this->UpdateMinimalMetrics(); };
-
                 ProcessFile();
                 break;
             }
-            case kStopDecoder: {
+            case static_cast<int>(CommunicationCodes::COL_Query_Event_Data): {
+                // Create file name
+                if (cmd.arguments.size() < 5) break;
+                setFileName(cmd.arguments);
+                setNumEvent(cmd.arguments);
+                choose_random_ = cmd.arguments.at(4) == 1;
+                if (process_num_events_ > 1) break;
+                // Set the functions to process events, create metrics and update them
+                // since the class members have an implicit this pointer to the current instance of the
+                // class we have to make it explicit with a lambda function
+                metric_creator_ = [this](EventStruct& evt) { this->CreateEventMetrics(evt); };
+                update_metrics_ = [this]() { this->UpdateEventMetrics(); };
+                ProcessFile();
                 break;
             }
             case kDecodeEvent: {
@@ -146,22 +157,24 @@ namespace data_monitor {
         // The number of desired events have been processed and metrics created
         // so update the metrics and send them
         update_metrics_();
-        SendMetrics(lbw_metrics_, metrics_);
     }
 
-    void DataMonitor::SendMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) {
-        // Send the LBW metrics
-        auto tmp_vec = lbw_metrics.serialize();
-        Command lbw_cmd(0x4001, tmp_vec.size());
-        lbw_cmd.arguments = std::move(tmp_vec);
+    // void DataMonitor::SendMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) {
+    //     // Send the LBW metrics
+    //     auto tmp_vec = lbw_metrics.serialize();
+    //     Command lbw_cmd(0x4001, tmp_vec.size());
+    //     lbw_cmd.arguments = std::move(tmp_vec);
+    //     status_client_.WriteSendBuffer(lbw_cmd);
+    //
+    //     std::cout << "Sent metrics.." << std::endl;
+    // }
+
+    void DataMonitor::SendMetric(std::vector<int32_t> &metric_vec, uint32_t metric_id) {
+        // Send the metrics
+        Command lbw_cmd(metric_id, metric_vec.size());
+        lbw_cmd.arguments = std::move(metric_vec);
         status_client_.WriteSendBuffer(lbw_cmd);
-        
         std::cout << "Sent metrics.." << std::endl;
-        // // Send the metrics
-        // tmp_vec = metrics.serialize();
-        // Command cmd(0x4002, tmp_vec.size());
-        // cmd.arguments = std::move(tmp_vec);
-        // status_client_.WriteSendBuffer(cmd);
     }
 
     void DataMonitor::CreateMinimalMetrics(EventStruct & event) {
@@ -175,6 +188,10 @@ namespace data_monitor {
         charge_algs_.UpdateMinimalMetrics(lbw_metrics_, metrics_);
         if (debug_) std::cout << "Updated charge.." << std::endl;
         light_algs_.UpdateMinimalMetrics(lbw_metrics_, metrics_);
+
+        auto tmp_vec = lbw_metrics_.serialize();
+        SendMetric(tmp_vec, 0x4001);
+
         if (debug_) std::cout << "Updated light.." << std::endl;
         if (debug_) lbw_metrics_.print();
         // Clear the metrics for the next file
@@ -182,20 +199,41 @@ namespace data_monitor {
         light_algs_.Clear();
     }
 
-    // void DataMonitor::SelectEvents() {
-    //     // Randomly but uniformly select events to process
-    //     selected_events_.clear();
-    //     for (size_t i = 0; i < events_per_file; i++) selected_events_.push_back(event_distrib_(random_generator_));
-    //     // Events must be in ascending order so we can check them in order as we decode the file
-    //     if (!selected_events_.empty()) std::sort(selected_events_.begin(), selected_events_.end());
-    // }
-    //
-    // uint16_t DataMonitor::SelectChargeChannel() {
-    //     return charge_channel_distrib_(random_generator_);
-    // }
-    //
-    // size_t DataMonitor::SelectLightChannel() {
-    //     return light_channel_distrib_(random_generator_);
-    // }
+    void DataMonitor::CreateEventMetrics(EventStruct & event) {
+        charge_algs_.GetChargeEvent(event);
+        if (debug_) std::cout << "Updated charge event.." << std::endl;
+        num_light_rois_ = light_algs_.GetLightEvent(event);
+        if (debug_) std::cout << "Updated light event.." << std::endl;
+    }
+
+    void DataMonitor::UpdateEventMetrics() {
+        if (choose_random_) {
+            auto charge_uniform = std::uniform_int_distribution<size_t>(0, NUM_CHARGE_CHANNELS);
+            size_t charge_channel = charge_uniform(random_generator_);
+            if (debug_) std::cout << "Random charge ch: " << charge_channel << std::endl;
+            auto tmp_vec = charge_algs_.UpdateChargeEvent(charge_event_metric_, charge_channel);
+            SendMetric(tmp_vec, 0x4002);
+
+            auto light_uniform = std::uniform_int_distribution<size_t>(0, num_light_rois_);
+            size_t light_roi = light_uniform(random_generator_);
+            if (debug_) std::cout << "Random light roi: " << light_roi << std::endl;
+            tmp_vec = light_algs_.UpdateLightEvent(light_event_metric_, light_roi);
+            SendMetric(tmp_vec, 0x4003);
+        } else {
+            for (size_t i = 0; i < NUM_CHARGE_CHANNELS; i++) {
+                auto tmp_vec = charge_algs_.UpdateChargeEvent(charge_event_metric_, i);
+                SendMetric(tmp_vec, 0x4002);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+            for (size_t i = 0; i < num_light_rois_; i++) {
+                auto tmp_vec = light_algs_.UpdateLightEvent(light_event_metric_, i);
+                SendMetric(tmp_vec, 0x4003);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+        }
+        // Make sure to clear it
+        charge_algs_.Clear();
+        light_algs_.Clear();
+    }
 
 } // data_monitor

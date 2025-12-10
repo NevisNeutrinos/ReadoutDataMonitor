@@ -22,6 +22,8 @@ int GetUserInput() {
     switch (choice) {
         case 0x1: {
             return static_cast<int>(pgrams::communication::CommunicationCodes::COL_Query_LB_Data);
+        } case 0x2: {
+            return static_cast<int>(pgrams::communication::CommunicationCodes::COL_Query_Event_Data);
         } case -1: {
             return -1;
         } default: {
@@ -35,12 +37,13 @@ int GetUserInput() {
 void PrintState() {
     std::cout << "Select a command:\n";
     std::cout << "  [1] MinSummary\n";
+    std::cout << "  [2] Get 1 Event\n";
     std::cout << "  [-1] Exit\n";
     std::cout << "Enter choice: ";
 }
 
 // Runs the command-line interface for the state machine.
-void Run(data_monitor::DataMonitor& dm, int run, int file_number, int num_evts, int stride) {
+void Run(data_monitor::DataMonitor& dm, int run, int file_number, int num_evts, int stride, int random_flag) {
 
     Command cmd(1,4);
     while (true) {
@@ -51,16 +54,16 @@ void Run(data_monitor::DataMonitor& dm, int run, int file_number, int num_evts, 
             break;
         }
         cmd.command = static_cast<uint16_t>(input);
-        cmd.arguments = {run, file_number, num_evts, stride};
+        cmd.arguments = {run, file_number, num_evts, stride, random_flag};
         dm.HandleCommand(cmd);
     }
 }
 
 int main(int argc, char* argv[]) {
 
-    if (argc < 5) {
+    if (argc < 6) {
         std::cerr << "Please include IP address and port!" << std::endl;
-        std::cerr << "Usage: " << argv[0] << " <RUN> <FILE_NUM> <NUM_EVT> <STRIDE>\n";
+        std::cerr << "Usage: " << argv[0] << " <RUN> <FILE_NUM> <NUM_EVT> <STRIDE> <RANDOM_FLAG>\n";
         return 1;
     }
 
@@ -68,20 +71,22 @@ int main(int argc, char* argv[]) {
     int file_number = std::stoi(argv[2]);
     int num_evt = std::stoi(argv[3]);
     int stride = std::stoi(argv[4]);
+    int random_flag = std::stoi(argv[5]);
 
     std::cout << "Runnning!" << std::endl;
 
     asio::io_context io_context;
     std::cout << "Starting controller..." << std::endl;
     bool run = true;
-    data_monitor::DataMonitor dm(io_context, "127.0.0.1", 1753, 1752, false, run);
+    //data_monitor::DataMonitor dm(io_context, "127.0.0.1", 1753, 1752, false, run);
+    data_monitor::DataMonitor dm(io_context, "10.44.45.96", 50017, 50016, false, run);
 
     std::thread io_thread1([&]() { io_context.run(); });
     std::thread io_thread2([&]() { io_context.run(); });
     std::thread monitor_thread([&]() { dm.ReceiveCommand(); });
 
     // Run the command line control
-    Run(dm, run_number, file_number, num_evt, stride);
+    Run(dm, run_number, file_number, num_evt, stride, random_flag);
 
     dm.SetRunning(false);
     monitor_thread.join();

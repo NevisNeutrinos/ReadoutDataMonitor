@@ -16,15 +16,13 @@
 void LightAlgs::MinimalSummary(EventStruct &event) {
     // The unbiased light readout corresponds to ID 0x4. We want to use this to get an unbiased snapshot
     // of channel baseline & RMS loosely correlated with the trigger since it initiates the unbiased readout
-    //uint8_t beam_gate_id = 0x1; // cosmic
-    uint8_t beam_gate_id = 0x4; // beam gate
 
     std::cout << "Size ID/Ch/ROI: " << event.light_trigger_id.size() << "/"
             << event.light_channel.size() << "/" << event.light_adc.size() << std::endl;
 
     for (size_t i = 0; i < event.light_channel.size(); i++) { // loop over each RI in the event
         if (event.light_channel[i] > NUM_LIGHT_CHANNELS-1) continue;
-        if (event.light_trigger_id.at(i) != beam_gate_id) { // should be a Cosmic ie Disc 1 ROI
+        if (event.light_trigger_id.at(i) != BEAM_GATE_DISC_ID) { // should be a Cosmic ie Disc 1 ROI
             light_rois_[event.light_channel.at(i)]++;
             continue; // skip non-beam gate readout ROIs
         }
@@ -62,9 +60,9 @@ void LightAlgs::UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &m
      * Average hits ROIs event and the charge hits to the metrics
      */
 
-    std::array<int32_t, NUM_LIGHT_CHANNELS> baseline_int;
-    std::array<int32_t, NUM_LIGHT_CHANNELS> rms_int;
-    std::array<int32_t, NUM_LIGHT_CHANNELS> avg_rois_int;
+    std::array<int32_t, NUM_LIGHT_CHANNELS> baseline_int{};
+    std::array<int32_t, NUM_LIGHT_CHANNELS> rms_int{};
+    std::array<int32_t, NUM_LIGHT_CHANNELS> avg_rois_int{};
     for (size_t i = 0; i < NUM_LIGHT_CHANNELS; i++) {
         baseline_int[i] = static_cast<int>(baseline_[i] / light_baseline_rms_norm_[i]);
         // TODO could perform the sqrt on ground for safety and efficiency
@@ -79,10 +77,24 @@ void LightAlgs::UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &m
     lbw_metrics.setLightAvgNumRois(avg_rois_int);
 }
 
+size_t LightAlgs::GetLightEvent(EventStruct &event) {
+    for (size_t i = 0; i < event.light_adc.size(); i++) {
+        if (event.light_trigger_id[i] != COSMIC_DISC_ID) continue;
+        light_cosmic_rois_.reserve(event.light_adc.size());
+        std::copy(event.light_adc[i].begin(),
+                  event.light_adc[i].end(),
+                  light_cosmic_rois_[i].begin());
+        light_roi_channels_.push_back(event.light_channel[i]);
+    }
+    return light_roi_channels_.size();
+}
 
-//bool LightAlgs::UpdateMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) {
-//    return true;
-//}
+std::vector<int32_t> LightAlgs::UpdateLightEvent(TpcMonitorLightEvent &tpc_light_metric, size_t roi) {
+    tpc_light_metric.setChannelNumber(light_roi_channels_[roi]);
+    tpc_light_metric.setLightSamples(light_cosmic_rois_[roi]);
+
+    return tpc_light_metric.serialize();
+}
 
 
 void LightAlgs::Clear() {
@@ -92,4 +104,6 @@ void LightAlgs::Clear() {
         light_rois_[i] = 0;
         light_baseline_rms_norm_[i] = 0;
     }
+    light_cosmic_rois_.clear();
+    light_roi_channels_.clear();
 }

@@ -57,9 +57,9 @@ void ChargeAlgs::UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &
      * Average hits per event and the charge hits to the metrics
      */
     std::cout << "num_events_ = " << num_events_ << std::endl;
-    std::array<int32_t, NUM_CHARGE_CHANNELS> baseline_int;
-    std::array<int32_t, NUM_CHARGE_CHANNELS> rms_int;
-    std::array<int32_t, NUM_CHARGE_CHANNELS> avg_hits_int;
+    std::array<int32_t, NUM_CHARGE_CHANNELS> baseline_int{};
+    std::array<int32_t, NUM_CHARGE_CHANNELS> rms_int{};
+    std::array<int32_t, NUM_CHARGE_CHANNELS> avg_hits_int{};
     for (size_t i = 0; i < NUM_CHARGE_CHANNELS; i++) {
         // if (i < 10) std::cout << i << ":" << baseline_[i] / num_events_ << "|" << rms_[i] / num_events_ << "|" << charge_hits_[i] << std::endl;
         baseline_int[i] = static_cast<int32_t>(baseline_[i] / num_events_);
@@ -76,6 +76,23 @@ void ChargeAlgs::UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &
     lbw_metrics.setAvgNumHits(avg_hits_int);
 
 }
+
+void ChargeAlgs::GetChargeEvent(EventStruct &event) {
+    std::cout << event.charge_adc.size() << "/" << charge_oneframe_samples_.size() << std::endl;
+    for (size_t j = 0; j < event.charge_adc.size(); j++) {
+        std::copy(event.charge_adc[j].begin() + CHARGE_START_SAMPLES,
+                   event.charge_adc[j].begin() + CHARGE_END_SAMPLES,
+                 charge_oneframe_samples_[event.charge_channel[j]].data());
+    }
+}
+
+std::vector<int32_t> ChargeAlgs::UpdateChargeEvent(TpcMonitorChargeEvent &tpc_charge_metric, size_t channel) {
+    tpc_charge_metric.setChannelNumber(channel);
+    tpc_charge_metric.setChargeSamples(charge_oneframe_samples_[channel]);
+
+    return tpc_charge_metric.serialize();
+}
+
 
 void ChargeAlgs::Clear() {
     // Clear the metrics between queries
