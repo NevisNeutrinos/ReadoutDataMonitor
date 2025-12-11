@@ -28,9 +28,9 @@ public:
 
     private:
 
-    void BaselineRms(const std::vector<uint16_t> &channel_charge_words, uint16_t channel);
+    void BaselineRms(const std::vector<uint16_t> &light_roi_words, uint16_t channel);
 
-    std::array<double, NUM_LIGHT_CHANNELS> rms_{0};
+    std::array<double, NUM_LIGHT_CHANNELS> variance_{0};
     std::array<double, NUM_LIGHT_CHANNELS> baseline_{0};
     std::array<size_t, NUM_LIGHT_CHANNELS> light_rois_{0};
     std::array<size_t, NUM_LIGHT_CHANNELS> light_baseline_rms_norm_{0};

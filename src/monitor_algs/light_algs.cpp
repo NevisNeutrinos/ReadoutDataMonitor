@@ -32,24 +32,24 @@ void LightAlgs::MinimalSummary(EventStruct &event) {
     num_events_++;
 }
 
-void LightAlgs::BaselineRms(const std::vector<uint16_t> &channel_charge_words, uint16_t channel) {
+void LightAlgs::BaselineRms(const std::vector<uint16_t> &light_roi_words, uint16_t channel) {
     // Assuming we are receiving the unbiased light readout ROI
     // Calculate the baseline and RMS for the channel, only use the first 8 samples unless
     // there are <8 but shouldn't happen
-    size_t num_samples = channel_charge_words.size() > 7 ? 8 : channel_charge_words.size();
+    size_t num_samples = light_roi_words.size() > 7 ? 8 : light_roi_words.size();
     if (num_samples < 1) return;
 
     double baseline_sum = 0;
-    double rms_sum = 0;
-    for (size_t i = 0; i < num_samples; i++) {
-        baseline_sum += channel_charge_words[i];
-        rms_sum += channel_charge_words[i] * channel_charge_words[i];
-    }
+    for (size_t i = 0; i < num_samples; i++) { baseline_sum += light_roi_words[i]; }
     baseline_sum /= num_samples;
-    rms_sum /= num_samples;
-
     baseline_[channel] += baseline_sum;
-    rms_[channel] += rms_sum;
+
+    double variance_sum = 0;
+    for (size_t i = 0; i < num_samples; i++) {
+        variance_sum += (light_roi_words[i] - baseline_sum) * (light_roi_words[i] - baseline_sum);
+    }
+    variance_sum /= num_samples;
+    variance_[channel] += variance_sum;
 }
 
 
@@ -67,7 +67,7 @@ void LightAlgs::UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &m
         baseline_int[i] = static_cast<int>(baseline_[i] / light_baseline_rms_norm_[i]);
         // TODO could perform the sqrt on ground for safety and efficiency
         // check to make sure rms is non-negative, should never be but better to avoid NaN
-        rms_int[i] = static_cast<int>((rms_[i] < 0) ? INT32_MAX : std::sqrt(rms_[i] / light_baseline_rms_norm_[i]));
+        rms_int[i] = static_cast<int>((variance_[i] < 0) ? INT32_MAX : 8 * std::sqrt(variance_[i] / light_baseline_rms_norm_[i]));
         avg_rois_int[i] = static_cast<int32_t>(8 * light_rois_[i] / num_events_);
     }
 
@@ -99,7 +99,7 @@ std::vector<int32_t> LightAlgs::UpdateLightEvent(TpcMonitorLightEvent &tpc_light
 
 void LightAlgs::Clear() {
     for (size_t i = 0; i < NUM_LIGHT_CHANNELS; i++) {
-        rms_[i] = 0;
+        variance_[i] = 0;
         baseline_[i] = 0;
         light_rois_[i] = 0;
         light_baseline_rms_norm_[i] = 0;

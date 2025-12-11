@@ -40,7 +40,7 @@ private:
 
     Histogram charge_histogram_{1024, 4096, 16};
 
-    std::array<double, NUM_CHARGE_CHANNELS> rms_{0};
+    std::array<double, NUM_CHARGE_CHANNELS> variance_{0};
     std::array<double, NUM_CHARGE_CHANNELS> baseline_{0};
     std::array<size_t, NUM_CHARGE_CHANNELS> charge_hits_{0};
     std::array<std::array<int32_t, CHARGE_ONE_FRAME>, NUM_CHARGE_CHANNELS> charge_oneframe_samples_{0};

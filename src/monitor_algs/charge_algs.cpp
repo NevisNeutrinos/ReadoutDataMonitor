@@ -27,22 +27,22 @@ void ChargeAlgs::BaselineRms(const std::vector<uint16_t> &channel_charge_words, 
     double num_samples = 5;
 
     double baseline_sum = 0;
-    double rms_sum = 0;
-    for (size_t i = 0; i < num_samples; i++) {
-        baseline_sum += channel_charge_words[i];
-        rms_sum += (channel_charge_words[i] * channel_charge_words[i]);
-    }
+    for (size_t i = 0; i < num_samples; i++) { baseline_sum += channel_charge_words[i]; }
     baseline_sum /= num_samples;
-    rms_sum /= num_samples;
-
     baseline_[channel] += baseline_sum;
-    rms_[channel] += rms_sum;
+
+    double variance_sum = 0;
+    for (size_t i = 0; i < num_samples; i++) {
+        variance_sum += (channel_charge_words[i] - baseline_sum) * (channel_charge_words[i] - baseline_sum);
+    }
+    variance_sum /= num_samples;
+    variance_[channel] += variance_sum;
 }
 
 void ChargeAlgs::HitsAboveThreshold(const std::vector<uint16_t> &channel_charge_words, uint16_t channel) {
     // Use baseline shifted threshold instead of baseline subtraction to avoid pesky 16b int overflows
-    double rms_threshold = 3.0;
-    double threshold = baseline_[channel] + rms_threshold * abs(rms_[channel] - baseline_[channel]);
+    double rms_threshold = 5.0;
+    double threshold = baseline_[channel] + rms_threshold * abs(variance_[channel]) + 1.0;
 
     for (auto adc_word : channel_charge_words) {
         if (adc_word > threshold) charge_hits_[channel]++;
@@ -65,7 +65,7 @@ void ChargeAlgs::UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &
         baseline_int[i] = static_cast<int32_t>(baseline_[i] / num_events_);
         // TODO could perform the sqrt on ground for safety and efficiency
         // check to make sure rms is non-negative, should never be but better to avoid NaN
-        rms_int[i] = static_cast<int32_t>((rms_[i] < 0) ? INT32_MAX : std::sqrt(rms_[i] / num_events_));
+        rms_int[i] = static_cast<int32_t>((variance_[i] < 0) ? INT32_MAX : 8 * std::sqrt(variance_[i] / num_events_));
         avg_hits_int[i] = static_cast<int32_t>(charge_hits_[i] / num_events_);
         // if (i < 10) std::cout << "  ->" << baseline_int[i] << "|" << rms_int[i] << "|" << avg_hits_int[i] << std::endl;
     }
@@ -98,7 +98,7 @@ void ChargeAlgs::Clear() {
     // Clear the metrics between queries
     for (size_t i = 0; i < NUM_CHARGE_CHANNELS; i++) {
         baseline_[i] = 0;
-        rms_[i] = 0;
+        variance_[i] = 0;
         charge_hits_[i] = 0;
     }
     num_events_ = 0;
