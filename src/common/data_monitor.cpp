@@ -201,12 +201,13 @@ namespace data_monitor {
 
     void DataMonitor::CreateEventMetrics(EventStruct & event) {
         charge_algs_.GetChargeEvent(event);
-        if (debug_) std::cout << "Updated charge event.." << std::endl;
-        num_light_rois_ = light_algs_.GetLightEvent(event);
-        if (debug_) std::cout << "Updated light event.." << std::endl;
+        if (debug_) std::cout << "Processed charge event.." << std::endl;
+        //num_light_rois_ = light_algs_.GetLightEvent(event);
+        if (debug_) std::cout << "Processed light event.." << std::endl;
     }
 
     void DataMonitor::UpdateEventMetrics() {
+        if (debug_) std::cout << "Updating Event Metrics.." << std::endl;
         if (choose_random_) {
             auto charge_uniform = std::uniform_int_distribution<size_t>(0, NUM_CHARGE_CHANNELS);
             size_t charge_channel = charge_uniform(random_generator_);
@@ -222,11 +223,13 @@ namespace data_monitor {
         } else {
             for (size_t i = 0; i < NUM_CHARGE_CHANNELS; i++) {
                 auto tmp_vec = charge_algs_.UpdateChargeEvent(charge_event_metric_, i);
+                if (debug_) std::cout << "Updated charge event.." << std::endl;
                 SendMetric(tmp_vec, 0x4002);
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
             for (size_t i = 0; i < num_light_rois_; i++) {
                 auto tmp_vec = light_algs_.UpdateLightEvent(light_event_metric_, i);
+                if (debug_) std::cout << "Updated light event.." << std::endl;
                 SendMetric(tmp_vec, 0x4003);
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }

@@ -80,7 +80,7 @@ void LightAlgs::UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &m
 size_t LightAlgs::GetLightEvent(EventStruct &event) {
     for (size_t i = 0; i < event.light_adc.size(); i++) {
         if (event.light_trigger_id[i] != COSMIC_DISC_ID) continue;
-        light_cosmic_rois_.reserve(event.light_adc.size());
+        light_cosmic_rois_.reserve(event.light_adc[i].size());
         std::copy(event.light_adc[i].begin(),
                   event.light_adc[i].end(),
                   light_cosmic_rois_[i].begin());
