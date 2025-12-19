@@ -43,8 +43,8 @@ public:
 private:
 
     // Command/Conrol helper fucntions
-    void setFileName(std::vector<int32_t>& args);
-    void setNumEvent(std::vector<int32_t>& args);
+    void setFileName(std::vector<uint32_t>& args);
+    void setNumEvent(std::vector<uint32_t>& args);
 
     // Minimal metrics
     void CreateMinimalMetrics(EventStruct & event);
@@ -55,8 +55,8 @@ private:
     void UpdateEventMetrics();
 
     void SendMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics);
-    void SendMetric(std::vector<int32_t> &metric_vec, uint32_t metric_id);
-    void SetMetrics(int32_t charge_metric, int32_t light_metric);
+    void SendMetric(std::vector<uint32_t> &metric_vec, uint32_t metric_id);
+    void SetMetrics(uint32_t charge_metric, uint32_t light_metric);
 
     TCPConnection command_client_;
     TCPConnection status_client_;
@@ -98,8 +98,8 @@ private:
     LightAlgs light_algs_;
     ChargeAlgs charge_algs_;
 
-    int32_t charge_metric_;
-    int32_t light_metric_;
+    uint32_t charge_metric_;
+    uint32_t light_metric_;
 
     std::string monitor_file_;
 

@@ -50,20 +50,20 @@ namespace data_monitor {
         }
     }
 
-    void DataMonitor::setNumEvent(std::vector<int32_t> &args) {
-        int32_t num_events_ = args.at(2);
+    void DataMonitor::setNumEvent(std::vector<uint32_t> &args) {
+        uint32_t num_events_ = args.at(2);
         event_stride_ = args.at(3);
         process_num_events_ = num_events_ * event_stride_;
         // 5k events per file so return error if requesting more
         if (process_num_events_ > 5000) process_num_events_ = 5000;
     }
 
-    void DataMonitor::setFileName(std::vector<int32_t> &args) {
+    void DataMonitor::setFileName(std::vector<uint32_t> &args) {
         // std::string base_path("/home/pgrams/data/nov2025_integration_data/readout_data/");
         std::string base_path("/data/readout_data/");
         //std::string base_path("/home/sabertooth2/GramsReadout/build/ReadoutDataMonitor/");
-        int32_t run_number = args.at(0);
-        int32_t file_number = args.at(1);
+        uint32_t run_number = args.at(0);
+        uint32_t file_number = args.at(1);
         monitor_file_ = base_path + "pGRAMS_bin_" + std::to_string(run_number) + "_" + std::to_string(file_number) + ".dat";
         std::cout << "Requested file: " << monitor_file_ << std::endl;
     }
@@ -108,7 +108,7 @@ namespace data_monitor {
         }
     }
 
-    void SetMetrics(int32_t charge_metric, int32_t light_metric) {
+    void SetMetrics(uint32_t charge_metric, uint32_t light_metric) {
         switch (charge_metric) {
             case 0x1: {
                 // TpcMonitor charge_monitor_;
@@ -169,7 +169,7 @@ namespace data_monitor {
     //     std::cout << "Sent metrics.." << std::endl;
     // }
 
-    void DataMonitor::SendMetric(std::vector<int32_t> &metric_vec, uint32_t metric_id) {
+    void DataMonitor::SendMetric(std::vector<uint32_t> &metric_vec, uint32_t metric_id) {
         // Send the metrics
         Command lbw_cmd(metric_id, metric_vec.size());
         lbw_cmd.arguments = std::move(metric_vec);

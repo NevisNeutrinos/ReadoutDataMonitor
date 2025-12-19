@@ -57,16 +57,16 @@ void ChargeAlgs::UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &
      * Average hits per event and the charge hits to the metrics
      */
     std::cout << "num_events_ = " << num_events_ << std::endl;
-    std::array<int32_t, NUM_CHARGE_CHANNELS> baseline_int{};
-    std::array<int32_t, NUM_CHARGE_CHANNELS> rms_int{};
-    std::array<int32_t, NUM_CHARGE_CHANNELS> avg_hits_int{};
+    std::array<uint32_t, NUM_CHARGE_CHANNELS> baseline_int{};
+    std::array<uint32_t, NUM_CHARGE_CHANNELS> rms_int{};
+    std::array<uint32_t, NUM_CHARGE_CHANNELS> avg_hits_int{};
     for (size_t i = 0; i < NUM_CHARGE_CHANNELS; i++) {
         // if (i < 10) std::cout << i << ":" << baseline_[i] / num_events_ << "|" << rms_[i] / num_events_ << "|" << charge_hits_[i] << std::endl;
-        baseline_int[i] = static_cast<int32_t>(baseline_[i] / num_events_);
+        baseline_int[i] = static_cast<uint32_t>(baseline_[i] / num_events_);
         // TODO could perform the sqrt on ground for safety and efficiency
         // check to make sure rms is non-negative, should never be but better to avoid NaN
-        rms_int[i] = static_cast<int32_t>((variance_[i] < 0) ? INT32_MAX : 8 * std::sqrt(variance_[i] / num_events_));
-        avg_hits_int[i] = static_cast<int32_t>(charge_hits_[i] / num_events_);
+        rms_int[i] = static_cast<uint32_t>((variance_[i] < 0) ? INT32_MAX : 8 * std::sqrt(variance_[i] / num_events_));
+        avg_hits_int[i] = static_cast<uint32_t>(charge_hits_[i] / num_events_);
         // if (i < 10) std::cout << "  ->" << baseline_int[i] << "|" << rms_int[i] << "|" << avg_hits_int[i] << std::endl;
     }
 
@@ -86,7 +86,7 @@ void ChargeAlgs::GetChargeEvent(EventStruct &event) {
     }
 }
 
-std::vector<int32_t> ChargeAlgs::UpdateChargeEvent(TpcMonitorChargeEvent &tpc_charge_metric, size_t channel) {
+std::vector<uint32_t> ChargeAlgs::UpdateChargeEvent(TpcMonitorChargeEvent &tpc_charge_metric, size_t channel) {
     tpc_charge_metric.setChannelNumber(channel);
     tpc_charge_metric.setChargeSamples(charge_oneframe_samples_[channel]);
 

@@ -60,15 +60,15 @@ void LightAlgs::UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &m
      * Average hits ROIs event and the charge hits to the metrics
      */
 
-    std::array<int32_t, NUM_LIGHT_CHANNELS> baseline_int{};
-    std::array<int32_t, NUM_LIGHT_CHANNELS> rms_int{};
-    std::array<int32_t, NUM_LIGHT_CHANNELS> avg_rois_int{};
+    std::array<uint32_t, NUM_LIGHT_CHANNELS> baseline_int{};
+    std::array<uint32_t, NUM_LIGHT_CHANNELS> rms_int{};
+    std::array<uint32_t, NUM_LIGHT_CHANNELS> avg_rois_int{};
     for (size_t i = 0; i < NUM_LIGHT_CHANNELS; i++) {
         baseline_int[i] = static_cast<int>(baseline_[i] / light_baseline_rms_norm_[i]);
         // TODO could perform the sqrt on ground for safety and efficiency
         // check to make sure rms is non-negative, should never be but better to avoid NaN
         rms_int[i] = static_cast<int>((variance_[i] < 0) ? INT32_MAX : 8 * std::sqrt(variance_[i] / light_baseline_rms_norm_[i]));
-        avg_rois_int[i] = static_cast<int32_t>(8 * light_rois_[i] / num_events_);
+        avg_rois_int[i] = static_cast<uint32_t>(8 * light_rois_[i] / num_events_);
     }
 
     // update the metrics
@@ -89,7 +89,7 @@ size_t LightAlgs::GetLightEvent(EventStruct &event) {
     return light_roi_channels_.size();
 }
 
-std::vector<int32_t> LightAlgs::UpdateLightEvent(TpcMonitorLightEvent &tpc_light_metric, size_t roi) {
+std::vector<uint32_t> LightAlgs::UpdateLightEvent(TpcMonitorLightEvent &tpc_light_metric, size_t roi) {
     tpc_light_metric.setChannelNumber(light_roi_channels_[roi]);
     tpc_light_metric.setLightSamples(light_cosmic_rois_[roi]);
 
