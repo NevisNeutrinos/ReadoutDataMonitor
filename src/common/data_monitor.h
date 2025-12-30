@@ -6,7 +6,7 @@
 #define DATA_MONITOR_H
 
 #include "tcp_connection.h"
-#include "communication_codes.h"
+#include "CommunicationCodes.hh"
 #include "process_events.h"
 #include "light_algs.h"
 #include "charge_algs.h"

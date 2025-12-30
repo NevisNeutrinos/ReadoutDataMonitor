@@ -13,12 +13,8 @@ set(USE_PYTHON FALSE)
 
 add_subdirectory(readout_decoder)
 
-include_directories(/home/sabertooth2/asio-1.30.2/include)
 include_directories(src/common
-                    src/monitor_algs
-                    readout_decoder/src
-                    ../PGramsCommCodec/include
-                    ../networking)
+                    src/monitor_algs)
 
 #file(GLOB DECODER_SRC readout_decoder/*.cpp)
 file(GLOB NETWORK_SRC ../networking/tcp*.cpp)
