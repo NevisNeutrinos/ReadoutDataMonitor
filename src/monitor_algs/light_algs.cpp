@@ -78,9 +78,10 @@ void LightAlgs::UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &m
 }
 
 size_t LightAlgs::GetLightEvent(EventStruct &event) {
+    light_cosmic_rois_.resize(event.light_adc.size());
     for (size_t i = 0; i < event.light_adc.size(); i++) {
         if (event.light_trigger_id[i] != COSMIC_DISC_ID) continue;
-        light_cosmic_rois_.reserve(event.light_adc[i].size());
+        light_cosmic_rois_[i].resize(event.light_adc[i].size());
         std::copy(event.light_adc[i].begin(),
                   event.light_adc[i].end(),
                   light_cosmic_rois_[i].begin());
@@ -90,6 +91,7 @@ size_t LightAlgs::GetLightEvent(EventStruct &event) {
 }
 
 std::vector<uint32_t> LightAlgs::UpdateLightEvent(TpcMonitorLightEvent &tpc_light_metric, size_t roi) {
+    if (light_roi_channels_.empty() || light_cosmic_rois_.empty()) return {};
     tpc_light_metric.setChannelNumber(light_roi_channels_[roi]);
     tpc_light_metric.setLightSamples(light_cosmic_rois_[roi]);
 
@@ -104,6 +106,9 @@ void LightAlgs::Clear() {
         light_rois_[i] = 0;
         light_baseline_rms_norm_[i] = 0;
     }
-    light_cosmic_rois_.clear();
+
+    for (auto & light_cosmic_roi : light_cosmic_rois_) {
+        std::fill(light_cosmic_roi.begin(), light_cosmic_roi.end(), 0);
+    }
     light_roi_channels_.clear();
 }

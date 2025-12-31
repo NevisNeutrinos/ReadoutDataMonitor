@@ -60,7 +60,7 @@ namespace data_monitor {
 
     void DataMonitor::setFileName(std::vector<uint32_t> &args) {
         // std::string base_path("/home/pgrams/data/nov2025_integration_data/readout_data/");
-        std::string base_path("/data/readout_data/");
+        std::string base_path("/home/pgrams/data/readout_data/");
         //std::string base_path("/home/sabertooth2/GramsReadout/build/ReadoutDataMonitor/");
         uint32_t run_number = args.at(0);
         uint32_t file_number = args.at(1);
@@ -218,8 +218,10 @@ namespace data_monitor {
             auto light_uniform = std::uniform_int_distribution<size_t>(0, num_light_rois_);
             size_t light_roi = light_uniform(random_generator_);
             if (debug_) std::cout << "Random light roi: " << light_roi << std::endl;
-            tmp_vec = light_algs_.UpdateLightEvent(light_event_metric_, light_roi);
-            SendMetric(tmp_vec, 0x4003);
+            if (light_algs_.isLightRoi()) {
+                tmp_vec = light_algs_.UpdateLightEvent(light_event_metric_, light_roi);
+                SendMetric(tmp_vec, 0x4003);
+            }
         } else {
             for (size_t i = 0; i < NUM_CHARGE_CHANNELS; i++) {
                 auto tmp_vec = charge_algs_.UpdateChargeEvent(charge_event_metric_, i);

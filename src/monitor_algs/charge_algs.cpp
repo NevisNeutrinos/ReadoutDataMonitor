@@ -80,8 +80,10 @@ void ChargeAlgs::UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &
 void ChargeAlgs::GetChargeEvent(EventStruct &event) {
     std::cout << event.charge_adc.size() << "/" << charge_oneframe_samples_.size() << std::endl;
     for (size_t j = 0; j < event.charge_adc.size(); j++) {
-        std::copy(event.charge_adc[j].begin() + CHARGE_START_SAMPLES,
-                   event.charge_adc[j].begin() + CHARGE_END_SAMPLES,
+        auto charge_one_frame_size = static_cast<size_t>(event.charge_adc[j].size() / 3);
+        charge_oneframe_samples_[event.charge_channel[j]].resize(charge_one_frame_size);
+        std::copy(event.charge_adc[j].begin() + charge_one_frame_size,
+                   event.charge_adc[j].begin() + 2 * charge_one_frame_size,
                  charge_oneframe_samples_[event.charge_channel[j]].data());
     }
 }
@@ -100,6 +102,7 @@ void ChargeAlgs::Clear() {
         baseline_[i] = 0;
         variance_[i] = 0;
         charge_hits_[i] = 0;
+        std::fill(charge_oneframe_samples_[i].begin(), charge_oneframe_samples_[i].end(), 0);
     }
     num_events_ = 0;
 }
