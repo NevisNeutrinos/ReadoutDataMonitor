@@ -48,11 +48,11 @@ private:
 
     // Minimal metrics
     void CreateMinimalMetrics(EventStruct & event);
-    void UpdateMinimalMetrics();
+    void UpdateMinimalMetrics(size_t evt_number);
 
     // Send events
     void CreateEventMetrics(EventStruct & event);
-    void UpdateEventMetrics();
+    void UpdateEventMetrics(size_t evt_number);
 
     void SendMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics);
     void SendMetric(std::vector<uint32_t> &metric_vec, uint32_t metric_id);
@@ -111,11 +111,13 @@ private:
 
     // Function to process the data and create metrics
     std::function<void(EventStruct&)> metric_creator_;
-    std::function<void()> update_metrics_;
+    std::function<void(size_t evt_number)> update_metrics_;
 
     std::atomic_bool debug_;
     bool choose_random_ = false;
     size_t num_light_rois_ = 0;
+    uint32_t run_number_ = 0;
+    uint32_t file_number_ = 0;
 
 };
 

@@ -59,12 +59,12 @@ namespace data_monitor {
     }
 
     void DataMonitor::setFileName(std::vector<uint32_t> &args) {
-        // std::string base_path("/home/pgrams/data/nov2025_integration_data/readout_data/");
+        //std::string base_path("/home/pgrams/data/nov2025_integration_data/readout_data/");
         std::string base_path("/home/pgrams/data/readout_data/");
         //std::string base_path("/home/sabertooth2/GramsReadout/build/ReadoutDataMonitor/");
-        uint32_t run_number = args.at(0);
-        uint32_t file_number = args.at(1);
-        monitor_file_ = base_path + "pGRAMS_bin_" + std::to_string(run_number) + "_" + std::to_string(file_number) + ".dat";
+        run_number_ = args.at(0);
+        file_number_ = args.at(1);
+        monitor_file_ = base_path + "pGRAMS_bin_" + std::to_string(run_number_) + "_" + std::to_string(file_number_) + ".dat";
         std::cout << "Requested file: " << monitor_file_ << std::endl;
     }
 
@@ -80,7 +80,7 @@ namespace data_monitor {
                 // since the class members have an implicit this pointer to the current instance of the
                 // class we have to make it explicit with a lambda function
                 metric_creator_ = [this](EventStruct& evt) { this->CreateMinimalMetrics(evt); };
-                update_metrics_ = [this]() { this->UpdateMinimalMetrics(); };
+                update_metrics_ = [this](size_t evt_number) { this->UpdateMinimalMetrics(evt_number); };
                 ProcessFile();
                 break;
             }
@@ -95,7 +95,7 @@ namespace data_monitor {
                 // since the class members have an implicit this pointer to the current instance of the
                 // class we have to make it explicit with a lambda function
                 metric_creator_ = [this](EventStruct& evt) { this->CreateEventMetrics(evt); };
-                update_metrics_ = [this]() { this->UpdateEventMetrics(); };
+                update_metrics_ = [this](size_t evt_number) { this->UpdateEventMetrics(evt_number); };
                 ProcessFile();
                 break;
             }
@@ -156,7 +156,7 @@ namespace data_monitor {
         }
         // The number of desired events have been processed and metrics created
         // so update the metrics and send them
-        update_metrics_();
+        update_metrics_(event_count);
     }
 
     // void DataMonitor::SendMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) {
@@ -184,7 +184,10 @@ namespace data_monitor {
         if (debug_) std::cout << "Processed light.." << std::endl;
     }
 
-    void DataMonitor::UpdateMinimalMetrics() {
+    void DataMonitor::UpdateMinimalMetrics(size_t evt_number) {
+        lbw_metrics_.setRunNumber(run_number_);
+        lbw_metrics_.setFileNumber(file_number_);
+        lbw_metrics_.setEvtNumber(0); // set to 0 since the metric is an aggregate across events
         charge_algs_.UpdateMinimalMetrics(lbw_metrics_, metrics_);
         if (debug_) std::cout << "Updated charge.." << std::endl;
         light_algs_.UpdateMinimalMetrics(lbw_metrics_, metrics_);
@@ -206,8 +209,14 @@ namespace data_monitor {
         if (debug_) std::cout << "Processed light event.." << std::endl;
     }
 
-    void DataMonitor::UpdateEventMetrics() {
+    void DataMonitor::UpdateEventMetrics(size_t evt_number) {
         if (debug_) std::cout << "Updating Event Metrics.." << std::endl;
+        charge_event_metric_.setRunNumber(run_number_);
+        charge_event_metric_.setFileNumber(file_number_);
+        charge_event_metric_.setEvtNumber(evt_number);
+        light_event_metric_.setRunNumber(run_number_);
+        light_event_metric_.setFileNumber(file_number_);
+        light_event_metric_.setEvtNumber(evt_number);
         if (choose_random_) {
             auto charge_uniform = std::uniform_int_distribution<size_t>(0, NUM_CHARGE_CHANNELS);
             size_t charge_channel = charge_uniform(random_generator_);
@@ -227,13 +236,13 @@ namespace data_monitor {
                 auto tmp_vec = charge_algs_.UpdateChargeEvent(charge_event_metric_, i);
                 if (debug_) std::cout << "Updated charge event.." << std::endl;
                 SendMetric(tmp_vec, 0x4002);
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
             }
             for (size_t i = 0; i < num_light_rois_; i++) {
                 auto tmp_vec = light_algs_.UpdateLightEvent(light_event_metric_, i);
                 if (debug_) std::cout << "Updated light event.." << std::endl;
                 SendMetric(tmp_vec, 0x4003);
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
             }
         }
         // Make sure to clear it
