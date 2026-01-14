@@ -24,16 +24,18 @@ void ChargeAlgs::MinimalSummary(EventStruct &event) {
 
 void ChargeAlgs::BaselineRms(const std::vector<uint16_t> &channel_charge_words, uint16_t channel) {
     // Calculate the baseline and RMS for the channel, only use the first 5 samples
-    double num_samples = 5;
+    double num_samples = 10;
 
     double baseline_sum = 0;
     for (size_t i = 0; i < num_samples; i++) { baseline_sum += channel_charge_words[i]; }
     baseline_sum /= num_samples;
     baseline_[channel] += baseline_sum;
 
+    // Use the averged baseline as it gives a better std. dev. estimate
+    double baseline_sub = baseline_[channel] / (num_events_ + 1);
     double variance_sum = 0;
     for (size_t i = 0; i < num_samples; i++) {
-        variance_sum += (channel_charge_words[i] - baseline_sum) * (channel_charge_words[i] - baseline_sum);
+        variance_sum += (channel_charge_words[i] - baseline_sub) * (channel_charge_words[i] - baseline_sub);
     }
     variance_sum /= num_samples;
     variance_[channel] += variance_sum;
@@ -42,7 +44,7 @@ void ChargeAlgs::BaselineRms(const std::vector<uint16_t> &channel_charge_words, 
 void ChargeAlgs::HitsAboveThreshold(const std::vector<uint16_t> &channel_charge_words, uint16_t channel) {
     // Use baseline shifted threshold instead of baseline subtraction to avoid pesky 16b int overflows
     double rms_threshold = 5.0;
-    double threshold = baseline_[channel] + rms_threshold * abs(variance_[channel]) + 1.0;
+    double threshold = baseline_[channel] + rms_threshold * std::abs(variance_[channel]) + 1.0;
 
     for (auto adc_word : channel_charge_words) {
         if (adc_word > threshold) charge_hits_[channel]++;
@@ -65,8 +67,8 @@ void ChargeAlgs::UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &
         baseline_int[i] = static_cast<uint32_t>(baseline_[i] / num_events_);
         // TODO could perform the sqrt on ground for safety and efficiency
         // check to make sure rms is non-negative, should never be but better to avoid NaN
-        rms_int[i] = static_cast<uint32_t>((variance_[i] < 0) ? INT32_MAX : 8 * std::sqrt(variance_[i] / num_events_));
-        avg_hits_int[i] = static_cast<uint32_t>(charge_hits_[i] / num_events_);
+        rms_int[i] = static_cast<uint32_t>((variance_[i] < 0) ? INT16_MAX : 15 * (std::sqrt(variance_[i] / num_events_)));
+        avg_hits_int[i] = static_cast<uint32_t>(15 * (charge_hits_[i] / num_events_));
         // if (i < 10) std::cout << "  ->" << baseline_int[i] << "|" << rms_int[i] << "|" << avg_hits_int[i] << std::endl;
     }
 

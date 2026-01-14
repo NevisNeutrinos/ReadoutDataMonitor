@@ -67,8 +67,8 @@ void LightAlgs::UpdateMinimalMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &m
         baseline_int[i] = static_cast<int>(baseline_[i] / light_baseline_rms_norm_[i]);
         // TODO could perform the sqrt on ground for safety and efficiency
         // check to make sure rms is non-negative, should never be but better to avoid NaN
-        rms_int[i] = static_cast<int>((variance_[i] < 0) ? INT32_MAX : 8 * std::sqrt(variance_[i] / light_baseline_rms_norm_[i]));
-        avg_rois_int[i] = static_cast<uint32_t>(8 * light_rois_[i] / num_events_);
+        rms_int[i] = static_cast<int>((variance_[i] < 0) ? INT16_MAX : 15 * (std::sqrt(variance_[i] / light_baseline_rms_norm_[i])));
+        avg_rois_int[i] = static_cast<uint32_t>(15 * (light_rois_[i] / num_events_));
     }
 
     // update the metrics
