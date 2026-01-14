@@ -53,15 +53,26 @@ namespace data_monitor {
     void DataMonitor::setNumEvent(std::vector<uint32_t> &args) {
         uint32_t num_events_ = args.at(2);
         event_stride_ = args.at(3);
+        event_stride_ = event_stride_ == 0 ? event_stride_ + 1 : event_stride_;
         process_num_events_ = num_events_ * event_stride_;
         // 5k events per file so return error if requesting more
+        // TODO set error bit
+        if (process_num_events_ > 5000) process_num_events_ = 5000;
+    }
+
+    void DataMonitor::setEventNumber(std::vector<uint32_t> &args) {
+        uint32_t event_number = args.at(2);
+        event_stride_ = event_number;
+        event_stride_ = event_stride_ == 0 ? event_stride_ + 1 : event_stride_;
+        process_num_events_ = event_number + 1;
+        // TODO set error bit
         if (process_num_events_ > 5000) process_num_events_ = 5000;
     }
 
     void DataMonitor::setFileName(std::vector<uint32_t> &args) {
         //std::string base_path("/home/pgrams/data/nov2025_integration_data/readout_data/");
-        std::string base_path("/home/pgrams/data/readout_data/");
-        //std::string base_path("/home/sabertooth2/GramsReadout/build/ReadoutDataMonitor/");
+        //std::string base_path("/home/pgrams/data/readout_data/");
+        std::string base_path("/home/pgrams/data/jan13_integration/readout_data/");
         run_number_ = args.at(0);
         file_number_ = args.at(1);
         monitor_file_ = base_path + "pGRAMS_bin_" + std::to_string(run_number_) + "_" + std::to_string(file_number_) + ".dat";
@@ -73,12 +84,12 @@ namespace data_monitor {
         switch (cmd.command) {
             case static_cast<int>(CommunicationCodes::COL_Query_LB_Data): {
                 // Create file name
-                if (cmd.arguments.size() < 5) break;
+                if (cmd.arguments.size() < 4) break;
                 setFileName(cmd.arguments);
                 setNumEvent(cmd.arguments);
                 // Set the functions to process events, create metrics and update them
                 // since the class members have an implicit this pointer to the current instance of the
-                // class we have to make it explicit with a lambda function
+                // class we have to make it explicit with a lambda function. Repeated for each case below.
                 metric_creator_ = [this](EventStruct& evt) { this->CreateMinimalMetrics(evt); };
                 update_metrics_ = [this](size_t evt_number) { this->UpdateMinimalMetrics(evt_number); };
                 ProcessFile();
@@ -86,14 +97,12 @@ namespace data_monitor {
             }
             case static_cast<int>(CommunicationCodes::COL_Query_Event_Data): {
                 // Create file name
-                if (cmd.arguments.size() < 5) break;
+                if (cmd.arguments.size() < 4) break;
                 setFileName(cmd.arguments);
-                setNumEvent(cmd.arguments);
-                choose_random_ = cmd.arguments.at(4) == 1;
-                if (process_num_events_ > 1) break;
-                // Set the functions to process events, create metrics and update them
-                // since the class members have an implicit this pointer to the current instance of the
-                // class we have to make it explicit with a lambda function
+                // We want to take one stride to the event we want, process it and quit.
+                setEventNumber(cmd.arguments);
+                choose_random_ = cmd.arguments.at(3) == 1;
+
                 metric_creator_ = [this](EventStruct& evt) { this->CreateEventMetrics(evt); };
                 update_metrics_ = [this](size_t evt_number) { this->UpdateEventMetrics(evt_number); };
                 ProcessFile();
@@ -138,13 +147,16 @@ namespace data_monitor {
 
     void DataMonitor::GetEventMetrics() {
         if (debug_) std::cout << "entering processing" << std::endl;
-        // Set the decoder stride
+        // Set the decoder stride. When requesting 1 event we want to make one stride directly to the
+        // desired event. This is because in the decoder striding skips filling the data structure for
+        // the intermediate events. Thus, it is more efficient to stride than to get each event.
         process_events_->SetEventStride(event_stride_);
+
         // Loop through desired events, either adjacent events or with some stride
         size_t event_count = 0;
         while (process_events_->GetEvent() && (event_count < process_num_events_) && (event_count < EVENT_LOOP_MAX)) {
             // the decoder must iterate through each event since we don't know a priori the event size
-            if ((event_count % event_stride_) != 0) {
+            if ((event_count % event_stride_) != 0 || (event_count == 0 && process_num_events_ != 1)) {
                 event_count++;
                 continue;
             }
@@ -158,16 +170,6 @@ namespace data_monitor {
         // so update the metrics and send them
         update_metrics_(event_count);
     }
-
-    // void DataMonitor::SendMetrics(LowBwTpcMonitor &lbw_metrics, TpcMonitor &metrics) {
-    //     // Send the LBW metrics
-    //     auto tmp_vec = lbw_metrics.serialize();
-    //     Command lbw_cmd(0x4001, tmp_vec.size());
-    //     lbw_cmd.arguments = std::move(tmp_vec);
-    //     status_client_.WriteSendBuffer(lbw_cmd);
-    //
-    //     std::cout << "Sent metrics.." << std::endl;
-    // }
 
     void DataMonitor::SendMetric(std::vector<uint32_t> &metric_vec, uint32_t metric_id) {
         // Send the metrics

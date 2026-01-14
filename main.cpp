@@ -18,19 +18,7 @@ int GetUserInput() {
         std::cout << "Invalid input. Please enter a number.\n";
         return GetUserInput();  // Retry
     }
-
-    switch (choice) {
-        case 0x1: {
-            return static_cast<int>(pgrams::communication::CommunicationCodes::COL_Query_LB_Data);
-        } case 0x2: {
-            return static_cast<int>(pgrams::communication::CommunicationCodes::COL_Query_Event_Data);
-        } case -1: {
-            return -1;
-        } default: {
-            std::cerr << "Invalid input. Please enter a number.\n";
-            return GetUserInput();
-        }
-    }
+    return choice;
 }
 
 // Prints the current state and available options.
@@ -43,9 +31,9 @@ void PrintState() {
 }
 
 // Runs the command-line interface for the state machine.
-void Run(data_monitor::DataMonitor& dm, int run, int file_number, int num_evts, int stride, int random_flag) {
+void Run(data_monitor::DataMonitor& dm, uint32_t run, uint32_t file_number, uint32_t num_evts, uint32_t stride, uint32_t random_flag) {
 
-    Command cmd(1,4);
+    Command cmd(1,5);
     while (true) {
         PrintState();
         int input = GetUserInput();
@@ -53,8 +41,18 @@ void Run(data_monitor::DataMonitor& dm, int run, int file_number, int num_evts, 
             std::cout << "Exiting...\n";
             break;
         }
-        cmd.command = static_cast<uint16_t>(input);
-        cmd.arguments = {run, file_number, num_evts, stride, random_flag};
+
+        if (input == 1) {
+            cmd.command = static_cast<int>(pgrams::communication::CommunicationCodes::COL_Query_LB_Data);
+            cmd.arguments = {run, file_number, num_evts, stride};
+        } else if (input == 2) { // treat num_evts as event_number
+            cmd.command = static_cast<int>(pgrams::communication::CommunicationCodes::COL_Query_Event_Data);
+            cmd.arguments = {run, file_number, num_evts, random_flag};
+        } else {
+            std::cerr << "Invalid input. Please enter a number.\n";
+            continue;
+        }
+
         dm.HandleCommand(cmd);
     }
 }
@@ -67,11 +65,11 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    int run_number = std::stoi(argv[1]);
-    int file_number = std::stoi(argv[2]);
-    int num_evt = std::stoi(argv[3]);
-    int stride = std::stoi(argv[4]);
-    int random_flag = std::stoi(argv[5]);
+    uint32_t run_number = std::stoi(argv[1]);
+    uint32_t file_number = std::stoi(argv[2]);
+    uint32_t num_evt = std::stoi(argv[3]);
+    uint32_t stride = std::stoi(argv[4]);
+    uint32_t random_flag = std::stoi(argv[5]);
 
     std::cout << "Runnning!" << std::endl;
 

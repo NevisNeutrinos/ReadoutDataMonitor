@@ -45,6 +45,7 @@ private:
     // Command/Conrol helper fucntions
     void setFileName(std::vector<uint32_t>& args);
     void setNumEvent(std::vector<uint32_t>& args);
+    void setEventNumber(std::vector<uint32_t>& args);
 
     // Minimal metrics
     void CreateMinimalMetrics(EventStruct & event);
