@@ -59,8 +59,10 @@ private:
     void SendMetric(std::vector<uint32_t> &metric_vec, uint32_t metric_id);
     void SetMetrics(uint32_t charge_metric, uint32_t light_metric);
 
-    TCPConnection command_client_;
-    TCPConnection status_client_;
+    // TCPConnection command_client_;
+    // TCPConnection status_client_;
+    std::shared_ptr<TCPConnection> command_client_;
+    std::shared_ptr<TCPConnection> status_client_;
     std::unique_ptr<ProcessEvents> process_events_;
 
     // Seed the random number generator

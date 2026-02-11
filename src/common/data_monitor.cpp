@@ -10,8 +10,8 @@ namespace data_monitor {
 
     DataMonitor::DataMonitor(asio::io_context& io_context, const std::string& ip_address, const uint16_t command_port,
                              const uint16_t status_port, bool is_server, bool is_running) :
-    command_client_(io_context, ip_address, command_port, is_server, true, false),
-    status_client_(io_context, ip_address, status_port, is_server, false, true),
+    // command_client_(io_context, ip_address, command_port, is_server, true, false),
+    // status_client_(io_context, ip_address, status_port, is_server, false, true),
     random_generator_(std::random_device()()),
     event_distrib_(event_min, event_max),
     charge_channel_distrib_(charge_min,charge_max),
@@ -21,6 +21,12 @@ namespace data_monitor {
     debug_(true)
     {
         std::cout << "DM" << std::endl;
+        command_client_ = std::make_shared<TCPConnection>(io_context, ip_address, command_port, is_server, true, false);
+        status_client_ = std::make_shared<TCPConnection>(io_context, ip_address, status_port, is_server, false, true);
+        command_client_->Start();
+        status_client_->Start();
+        // command_client_.Start();
+        // status_client_.Start();
         process_events_ = std::make_unique<ProcessEvents>(light_slot_, false, std::vector<uint16_t>(), false);
         process_events_->UseEventStride(true);
         std::cout << "DM End" << std::endl;
@@ -34,8 +40,8 @@ namespace data_monitor {
 
     void DataMonitor::SetRunning(const bool run) {
         is_running_.store(run);
-        command_client_.setStopCmdRead(!run);
-        status_client_.setStopCmdRead(!run);
+        command_client_->setStopCmdRead(!run);
+        status_client_->setStopCmdRead(!run);
     }
    
     void DataMonitor::Run() {
@@ -45,7 +51,7 @@ namespace data_monitor {
 
     void DataMonitor::ReceiveCommand() {
         while (is_running_.load()) {
-            Command cmd = command_client_.ReadRecvBuffer();
+            Command cmd = command_client_->ReadRecvBuffer();
             HandleCommand(cmd);
         }
     }
@@ -175,7 +181,7 @@ namespace data_monitor {
         // Send the metrics
         Command lbw_cmd(metric_id, metric_vec.size());
         lbw_cmd.arguments = std::move(metric_vec);
-        status_client_.WriteSendBuffer(lbw_cmd);
+        status_client_->WriteSendBuffer(lbw_cmd);
         std::cout << "Sent metrics.." << std::endl;
     }
 
