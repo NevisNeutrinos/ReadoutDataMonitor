@@ -43,10 +43,10 @@ void Run(data_monitor::DataMonitor& dm, uint32_t run, uint32_t file_number, uint
         }
 
         if (input == 1) {
-            cmd.command = static_cast<int>(pgrams::communication::CommunicationCodes::COL_Query_LB_Data);
+            cmd.command = static_cast<int>(pgrams::communication::CommunicationCodes::TPCMonitor_Query_LB_Data);
             cmd.arguments = {run, file_number, num_evts, stride};
         } else if (input == 2) { // treat num_evts as event_number
-            cmd.command = static_cast<int>(pgrams::communication::CommunicationCodes::COL_Query_Event_Data);
+            cmd.command = static_cast<int>(pgrams::communication::CommunicationCodes::TPCMonitor_Query_Event_Data);
             cmd.arguments = {run, file_number, num_evts, random_flag};
         } else {
             std::cerr << "Invalid input. Please enter a number.\n";

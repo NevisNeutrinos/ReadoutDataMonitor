@@ -88,7 +88,7 @@ namespace data_monitor {
     void DataMonitor:: HandleCommand(Command& cmd) {
         std::cout << "Received command: 0x" << std::hex << cmd.command << std::dec << std::endl;
         switch (cmd.command) {
-            case static_cast<int>(CommunicationCodes::COL_Query_LB_Data): {
+            case static_cast<int>(CommunicationCodes::TPCMonitor_Query_LB_Data): {
                 // Create file name
                 if (cmd.arguments.size() < 4) break;
                 setFileName(cmd.arguments);
@@ -101,7 +101,7 @@ namespace data_monitor {
                 ProcessFile();
                 break;
             }
-            case static_cast<int>(CommunicationCodes::COL_Query_Event_Data): {
+            case static_cast<int>(CommunicationCodes::TPCMonitor_Query_Event_Data): {
                 // Create file name
                 if (cmd.arguments.size() < 4) break;
                 setFileName(cmd.arguments);
